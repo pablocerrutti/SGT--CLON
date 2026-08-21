@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>SGT | Inspecciones</title>
+
+
+    <link rel="stylesheet" href="../../css/estilos.css">
+
+
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+
+    <link rel="stylesheet" href="inspecciones.css">
+
+
+</head>
+
+
+<body>
+
+
+<main class="contenido sin-sidebar">
+
+
+<header class="cabecera">
+
+
+    <div>
+
+        <h1>
+
+            <i class="fa-solid fa-clipboard-check"></i>
+
+            Inspecciones
+
+        </h1>
+
+
+        <p id="usuarioNombre"></p>
+
+
+    </div>
+
+
+
+    <button id="btnVolver">
+
+        <i class="fa-solid fa-arrow-left"></i>
+
+        Volver al mapa
+
+    </button>
+
+
+</header>
+
+
+
+
+<section class="formulario">
+
+
+<h2>
+    Registrar incidencia
+</h2>
+
+
+
+<form id="formInspeccion">
+
+
+
+<label>
+
+    Elemento inspeccionado
+
+</label>
+
+
+<!-- Texto visible -->
+
+<input
+
+    id="elementoTexto"
+
+    type="text"
+
+    readonly
+
+    placeholder="Elemento seleccionado desde el mapa">
+
+
+<!-- ID real que se guarda -->
+
+<input
+
+    id="elemento"
+
+    type="hidden"
+
+    required>
+
+
+
+
+
+<label for="incidencia">
+
+    Descripción de la incidencia
+
+</label>
+
+
+<textarea
+
+    id="incidencia"
+
+    maxlength="3000"
+
+    required>
+
+</textarea>
+
+
+
+
+
+<label for="video">
+
+    Video de la inspección
+
+    <small>
+        (Máximo 30 MB)
+    </small>
+
+</label>
+
+
+<input
+
+    id="video"
+
+    type="file"
+
+    accept="video/*">
+
+
+
+
+
+<label for="documento">
+
+    Foto o boleta
+
+    <small>
+        (Máximo 10 MB)
+    </small>
+
+</label>
+
+
+<input
+
+    id="documento"
+
+    type="file"
+
+    accept="image/*,application/pdf">
+
+
+
+
+
+<button
+
+    type="submit">
+
+
+    <i class="fa-solid fa-floppy-disk"></i>
+
+    Guardar inspección
+
+
+</button>
+
+
+
+</form>
+
+
+
+<p
+
+id="mensaje"
+
+aria-live="polite">
+
+</p>
+
+
+
+</section>
+
+
+
+
+
+
+<section>
+
+
+<h2>
+
+    Historial de inspecciones
+
+</h2>
+
+
+
+<div id="lista"></div>
+
+
+
+</section>
+
+
+
+
+
+</main>
+
+
+
+
+
+<script src="../../js/api.js"></script>
+
+
+<script src="inspeccion.js"></script>
+
+
+
+</body>
+
+
+</html>

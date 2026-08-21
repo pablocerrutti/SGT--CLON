@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>SGT | Dashboard</title>
+
+<link rel="stylesheet" href="../css/estilos.css">
+<link rel="stylesheet" href="../css/dashboard.css">
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+</head>
+
+<body>
+
+<div class="sidebar">
+
+    <div class="logo">
+
+        <img src="../img/logo.png" width="90">
+
+        <h2>SGT</h2>
+
+        <p>Dirección de Tránsito y Transportes</p>
+
+    </div>
+
+    <ul>
+
+        <li class="activo">
+
+            <i class="fa-solid fa-house"></i>
+
+            Dashboard
+
+        </li>
+
+        <li id="menuUsuarios">
+
+            <i class="fa-solid fa-users"></i>
+
+            Usuarios
+
+        </li>
+
+        <li id="menuMovilidad">
+
+            <i class="fa-solid fa-map-location-dot"></i>
+
+            Movilidad Urbana
+
+        </li>
+
+        <li id="menuFiscalizacion">
+
+            <i class="fa-solid fa-camera"></i>
+
+            Fiscalización
+
+        </li>
+
+        <li onclick="cerrarSesion()">
+
+            <i class="fa-solid fa-right-from-bracket"></i>
+
+            Salir
+
+        </li>
+
+    </ul>
+
+</div>
+
+<div class="contenido">
+
+<header>
+
+<div>
+
+<h1>Panel Principal</h1>
+
+<p id="bienvenida"></p>
+
+</div>
+
+<div id="usuarioNombre"></div>
+
+</header>
+
+<div class="tarjetas">
+
+<div class="card" id="cardUsuarios">
+
+<i class="fa-solid fa-users"></i>
+
+<h2>Usuarios</h2>
+
+<p>Administración de usuarios y permisos.</p>
+
+</div>
+
+<div class="card" id="cardMovilidad">
+
+<i class="fa-solid fa-map-location-dot"></i>
+
+<h2>Movilidad Urbana</h2>
+
+<p>Gestión del mobiliario urbano.</p>
+
+</div>
+
+<div class="card" id="cardFiscalizacion">
+
+<i class="fa-solid fa-camera"></i>
+
+<h2>Fiscalización</h2>
+
+<p>Bodycams, actuaciones e incidencias.</p>
+
+</div>
+
+</div>
+
+</div>
+
+<script src="../js/dashboard.js"></script>
+
+</body>
+
+</html>

@@ -1,0 +1,407 @@
+
+<!doctype html>
+<html lang="es">
+
+<head>
+
+    <meta charset="utf-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width,initial-scale=1"
+    >
+
+    <title>SGT | Fiscalización</title>
+
+    <link
+        rel="stylesheet"
+        href="../../css/estilos.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="inspecciones.css"
+    >
+
+</head>
+
+
+<body>
+
+
+<main class="contenido sin-sidebar">
+
+
+<header>
+
+    <div>
+
+        <h1>Fiscalización</h1>
+
+        <p id="usuarioNombre"></p>
+
+    </div>
+
+
+    <!-- =========================================
+         VOLVER AL DASHBOARD
+         ========================================= -->
+
+    <button
+        type="button"
+        id="btnVolver"
+        class="btn-volver"
+        onclick="window.location.href='../../pages/dashboard.html'"
+    >
+
+        <i class="fa-solid fa-arrow-left"></i>
+
+        Volver
+
+    </button>
+
+</header>
+
+
+
+<section class="formulario">
+
+
+<h2>Registrar actuación</h2>
+
+
+<form id="formInspeccion">
+
+
+    <h3>Inspector actuante</h3>
+
+
+    <label>
+        Número Beta
+    </label>
+
+
+    <input
+        type="text"
+        id="beta"
+        readonly
+    >
+
+
+    <label>
+        Inspector
+    </label>
+
+
+    <input
+        type="text"
+        id="inspector"
+        readonly
+    >
+
+
+
+    <h3>Datos del vehículo</h3>
+
+
+    <label>
+        Matrícula
+    </label>
+
+
+    <input
+        type="text"
+        id="matricula"
+        maxlength="10"
+        required
+    >
+
+
+
+    <label>
+        Tipo de actuación
+    </label>
+
+
+    <select
+        id="tipoActuacion"
+        required
+    >
+
+        <option value="">
+            Seleccione...
+        </option>
+
+
+        <option value="Fiscalización">
+            Fiscalización
+        </option>
+
+
+        <option value="Multa">
+            Multa
+        </option>
+
+
+        <option value="Apercibimiento">
+            Apercibimiento
+        </option>
+
+
+        <option value="Control">
+            Control Vehicular
+        </option>
+
+
+        <option value="Notificacion">
+            Notificación
+        </option>
+
+
+        <option value="Est. Autorizado">
+            Estacionamiento Autorizado
+        </option>
+
+    </select>
+
+
+
+    <!-- =========================================
+         DATOS BOLETA
+         ========================================= -->
+
+    <div
+        id="datosBoleta"
+        style="display:none;"
+    >
+
+        <label>
+            Número de boleta
+        </label>
+
+
+        <input
+            type="text"
+            id="numeroBoleta"
+        >
+
+    </div>
+
+
+
+    <h3>Datos del infractor</h3>
+
+
+    <label>
+        Nombre completo
+    </label>
+
+
+    <input
+        type="text"
+        id="nombreInfractor"
+        required
+    >
+
+
+    <label>
+        Cédula de identidad
+    </label>
+
+
+    <input
+        type="text"
+        id="cedula"
+        required
+    >
+
+
+
+    <h3>Detalle de la actuación</h3>
+
+
+    <label>
+        Descripción
+    </label>
+
+
+    <textarea
+        id="detalle"
+        maxlength="3000"
+        required
+    ></textarea>
+
+
+
+    <h3>Evidencia</h3>
+
+
+    <label>
+
+        Video BodyCam
+
+        <small>
+            (máx. 30 MB)
+        </small>
+
+    </label>
+
+
+    <input
+        id="video"
+        type="file"
+        accept="video/*"
+    >
+
+
+
+    <!-- =========================================
+         FOTOGRAFÍA
+         ========================================= -->
+
+    <div id="fotoActuacion">
+
+        <label>
+
+            Fotografía de la actuación / Boleta
+
+            <small>
+                (Obligatoria para multas y apercibimientos)
+            </small>
+
+        </label>
+
+
+        <input
+            id="documento"
+            type="file"
+            accept="image/*"
+        >
+
+    </div>
+
+
+
+    <button type="submit">
+
+        Guardar actuación
+
+    </button>
+
+
+</form>
+
+
+<p
+    id="mensaje"
+    aria-live="polite"
+></p>
+
+
+</section>
+
+
+
+<section>
+
+
+<h2>
+    Actuaciones registradas
+</h2>
+
+
+<div id="lista"></div>
+
+
+</section>
+
+
+</main>
+
+
+
+<!-- =============================================
+     API
+     ============================================= -->
+
+<script src="../../js/api.js"></script>
+
+
+
+<!-- =============================================
+     JAVASCRIPT FISCALIZACIÓN
+     ============================================= -->
+
+<script src="inspecciones.js"></script>
+
+
+
+<!-- =============================================
+     TIPO DE ACTUACIÓN
+     ============================================= -->
+
+<script>
+
+const tipo =
+    document.getElementById(
+        "tipoActuacion"
+    );
+
+
+const boleta =
+    document.getElementById(
+        "datosBoleta"
+    );
+
+
+const foto =
+    document.getElementById(
+        "fotoActuacion"
+    );
+
+
+const documento =
+    document.getElementById(
+        "documento"
+    );
+
+
+tipo.addEventListener(
+    "change",
+    () => {
+
+        const requiere =
+            tipo.value === "Multa" ||
+            tipo.value === "Apercibimiento";
+
+
+        boleta.style.display =
+            requiere
+            ? "block"
+            : "none";
+
+
+        foto.style.display =
+            requiere
+            ? "block"
+            : "none";
+
+
+        documento.required =
+            requiere;
+
+    }
+);
+
+</script>
+
+
+</body>
+
+</html>
+```

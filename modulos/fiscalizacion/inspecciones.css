@@ -1,0 +1,63 @@
+.sin-sidebar{
+    margin-left:0;
+    max-width:1100px;
+    margin:auto;
+}
+
+.formulario{
+    margin-bottom:24px;
+}
+
+.formulario h3{
+    margin:26px 0 12px;
+    padding-bottom:6px;
+    border-bottom:1px solid #284c70;
+    color:#ffffff;
+    font-size:1rem;
+}
+
+.formulario label{
+    display:block;
+    margin:14px 0 6px;
+}
+
+.formulario input,
+.formulario select,
+.formulario textarea{
+    width:100%;
+    box-sizing:border-box;
+}
+
+.formulario textarea{
+    min-height:120px;
+    resize:vertical;
+}
+
+.formulario button{
+    margin-top:20px;
+}
+
+#datosBoleta,
+#fotoActuacion{
+    margin-top:10px;
+}
+
+#lista{
+    display:grid;
+    gap:10px;
+}
+
+.inspeccion{
+    padding:16px;
+    background:#102338;
+    border:1px solid #284c70;
+    border-radius:10px;
+}
+
+.exito{
+    color:#22c55e;
+}
+
+.error{
+    color:#f87171;
+}

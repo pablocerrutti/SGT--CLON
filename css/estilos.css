@@ -1,0 +1,395 @@
+/* ==========================================================
+   SGT - SISTEMA DE GESTIÓN DE TRÁNSITO
+   Dirección de Tránsito y Transportes
+========================================================== */
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:"Segoe UI",Arial,sans-serif;
+}
+
+html,
+body{
+    width:100%;
+    height:100%;
+    background:#071421;
+    color:#f8fafc;
+}
+
+/*==========================
+    VARIABLES
+==========================*/
+
+:root{
+
+    --azul:#0284c7;
+    --azul2:#0ea5e9;
+    --azulOscuro:#071421;
+    --panel:#102338;
+    --panel2:#0b1725;
+
+    --verde:#22c55e;
+    --rojo:#ef4444;
+    --amarillo:#f59e0b;
+
+    --borde:#1d4ed8;
+
+}
+
+/*==========================
+    BOTONES
+==========================*/
+
+button{
+
+    background:var(--azul);
+
+    color:white;
+
+    border:none;
+
+    border-radius:8px;
+
+    padding:12px 18px;
+
+    cursor:pointer;
+
+    transition:.25s;
+
+    font-weight:bold;
+
+}
+
+button:hover{
+
+    background:#0369a1;
+
+}
+
+/*==========================
+    INPUTS
+==========================*/
+
+input,
+select,
+textarea{
+
+    width:100%;
+
+    padding:12px;
+
+    border-radius:8px;
+
+    border:1px solid #355675;
+
+    background:#06111f;
+
+    color:white;
+
+    outline:none;
+
+}
+
+textarea{
+
+    resize:vertical;
+
+}
+
+/*==========================
+    TITULOS
+==========================*/
+
+h1{
+
+    color:#38bdf8;
+
+    font-size:32px;
+
+}
+
+h2{
+
+    color:#38bdf8;
+
+}
+
+h3{
+
+    color:#38bdf8;
+
+}
+
+p{
+
+    color:#d8e3ef;
+
+}
+
+/*==========================
+    SIDEBAR
+==========================*/
+
+.sidebar{
+
+    position:fixed;
+
+    left:0;
+
+    top:0;
+
+    width:240px;
+
+    height:100vh;
+
+    background:#081521;
+
+    border-right:1px solid var(--borde);
+
+    padding:20px;
+
+}
+
+.sidebar .logo{
+
+    text-align:center;
+
+    margin-bottom:25px;
+
+}
+
+.sidebar .logo img{
+
+    width:80px;
+
+    margin-bottom:10px;
+
+}
+
+.sidebar ul{
+
+    list-style:none;
+
+}
+
+.sidebar li{
+
+    padding:12px;
+
+    border-radius:8px;
+
+    cursor:pointer;
+
+    margin-bottom:6px;
+
+    transition:.25s;
+
+}
+
+.sidebar li:hover{
+
+    background:#12395a;
+
+}
+
+.sidebar .activo{
+
+    background:var(--azul);
+
+}
+
+/*==========================
+    CONTENIDO
+==========================*/
+
+.contenido{
+
+    margin-left:240px;
+
+    padding:25px;
+
+}
+
+/*==========================
+    HEADER
+==========================*/
+
+header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-bottom:20px;
+
+}
+
+/*==========================
+    TARJETAS
+==========================*/
+
+.tarjetas{
+
+    display:grid;
+
+    grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+
+    gap:20px;
+
+}
+
+.card{
+
+    background:var(--panel);
+
+    border:1px solid #284c70;
+
+    border-radius:14px;
+
+    padding:25px;
+
+    cursor:pointer;
+
+    transition:.25s;
+
+}
+
+.card:hover{
+
+    transform:translateY(-5px);
+
+    border-color:var(--azul2);
+
+}
+
+.card i{
+
+    font-size:42px;
+
+    color:#38bdf8;
+
+    margin-bottom:15px;
+
+}
+
+.card h2{
+
+    margin-bottom:10px;
+
+}
+
+/*==========================
+    TABLAS
+==========================*/
+
+table{
+
+    width:100%;
+
+    border-collapse:collapse;
+
+    background:#081827;
+
+}
+
+thead{
+
+    background:#0b5a89;
+
+}
+
+th{
+
+    padding:12px;
+
+    text-align:left;
+
+}
+
+td{
+
+    padding:10px;
+
+    border-bottom:1px solid #20374d;
+
+}
+
+/*==========================
+    MAPA
+==========================*/
+
+#map{
+
+    width:100%;
+
+    height:calc(100vh - 140px);
+
+    border-radius:12px;
+
+    overflow:hidden;
+
+}
+
+/*==========================
+    FORMULARIOS
+==========================*/
+
+.formulario{
+
+    background:#102338;
+
+    border-radius:12px;
+
+    padding:20px;
+
+}
+
+.form-grid{
+
+    display:grid;
+
+    grid-template-columns:repeat(2,1fr);
+
+    gap:15px;
+
+}
+
+/*==========================
+    RESPONSIVE
+==========================*/
+
+@media(max-width:900px){
+
+.sidebar{
+
+    width:100%;
+
+    height:auto;
+
+    position:relative;
+
+}
+
+.contenido{
+
+    margin-left:0;
+
+}
+
+.form-grid{
+
+    grid-template-columns:1fr;
+
+}
+
+.tarjetas{
+
+    grid-template-columns:1fr;
+
+}
+
+}

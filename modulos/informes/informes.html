@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>SGT | Informes</title>
+
+
+<link rel="stylesheet" href="../../css/estilos.css">
+
+<link rel="stylesheet" href="informes.css">
+
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+
+</head>
+
+
+<body>
+
+
+<main class="contenido sin-sidebar">
+
+
+<header class="cabecera">
+
+
+<div>
+
+<h1>
+
+<i class="fa-solid fa-file-lines"></i>
+
+Informe de elementos
+
+</h1>
+
+
+<p id="usuarioNombre"></p>
+
+
+</div>
+
+
+<button id="btnVolver">
+
+<i class="fa-solid fa-arrow-left"></i>
+
+Volver al mapa
+
+</button>
+
+
+</header>
+
+
+
+
+
+<section class="filtros">
+
+
+<!-- FILTRO LOCALIDAD -->
+
+<select id="filtroLocalidad">
+
+<option value="">
+
+Todas las localidades
+
+</option>
+
+</select>
+
+
+
+
+
+<!-- FILTRO TIPO -->
+
+<select id="filtroTipo">
+
+<option value="">
+
+Todos los tipos
+
+</option>
+
+</select>
+
+
+
+
+
+<!-- FILTRO ESTADO -->
+
+<select id="filtroEstado">
+
+<option value="">
+
+Todos los estados
+
+</option>
+
+</select>
+
+
+
+
+
+<input
+
+type="search"
+
+id="buscar"
+
+placeholder="Buscar elemento...">
+
+
+
+
+<button id="btnActualizar">
+
+<i class="fa-solid fa-rotate"></i>
+
+Actualizar
+
+</button>
+
+
+
+
+
+<button id="btnPDF">
+
+<i class="fa-solid fa-file-pdf"></i>
+
+Crear PDF
+
+</button>
+
+
+
+</section>
+
+
+
+
+
+<p id="mensaje"></p>
+
+
+
+
+
+<section>
+
+
+<h2>
+
+Listado de elementos
+
+</h2>
+
+
+
+
+<table>
+
+
+<thead>
+
+
+<tr>
+
+<th>Código</th>
+
+<th>Localidad</th>
+
+<th>Tipo</th>
+
+<th>Nombre</th>
+
+<th>Dirección</th>
+
+<th>Estado</th>
+
+<th>Coordenadas</th>
+
+</tr>
+
+
+</thead>
+
+
+
+<tbody id="tablaElementos">
+
+
+</tbody>
+
+
+
+</table>
+
+
+
+</section>
+
+
+
+
+</main>
+
+
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+
+
+
+
+<script src="../../js/api.js"></script>
+
+
+<script src="informes.js"></script>
+
+
+
+</body>
+
+
+</html>

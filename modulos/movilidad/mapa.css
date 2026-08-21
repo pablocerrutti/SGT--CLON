@@ -1,0 +1,991 @@
+/*====================================================
+  SGT - MAPA
+====================================================*/
+
+*{
+    box-sizing:border-box;
+}
+
+
+/*====================================================
+  CONTENEDOR PRINCIPAL
+====================================================*/
+
+.contenedorPrincipal{
+
+    display:grid;
+
+    grid-template-columns:
+        minmax(0,1fr)
+        340px;
+
+    gap:15px;
+
+    width:100%;
+
+    min-width:0;
+
+}
+
+
+/*====================================================
+  MAPA
+====================================================*/
+
+#map{
+
+    width:100%;
+
+    height:
+        calc(100vh - 210px);
+
+    min-height:450px;
+
+    border-radius:12px;
+
+    overflow:hidden;
+
+}
+
+
+/*====================================================
+  PANEL
+====================================================*/
+
+.panel{
+
+    background:#fff;
+
+    padding:18px;
+
+    border-radius:12px;
+
+    box-shadow:
+        0 3px 12px rgba(0,0,0,.15);
+
+    overflow-y:auto;
+
+    max-height:
+        calc(100vh - 210px);
+
+    box-sizing:border-box;
+
+}
+
+
+.panel h2{
+
+    margin-top:0;
+
+    color:#0d47a1;
+
+}
+
+
+.panel label{
+
+    display:block;
+
+    margin-top:10px;
+
+    margin-bottom:5px;
+
+    font-weight:bold;
+
+}
+
+
+.panel input,
+.panel select,
+.panel textarea{
+
+    width:100%;
+
+    box-sizing:border-box;
+
+    padding:9px;
+
+    border:
+        1px solid #ccc;
+
+    border-radius:7px;
+
+    font-family:inherit;
+
+}
+
+
+.panel textarea{
+
+    min-height:70px;
+
+    resize:vertical;
+
+}
+
+
+.panel button[type="submit"]{
+
+    width:100%;
+
+    margin-top:15px;
+
+    padding:11px;
+
+    border:none;
+
+    border-radius:8px;
+
+    background:#1976d2;
+
+    color:#fff;
+
+    font-weight:bold;
+
+    cursor:pointer;
+
+}
+
+
+.panel button[type="submit"]:hover{
+
+    background:#1565c0;
+
+}
+
+
+/*====================================================
+  BARRA SUPERIOR
+====================================================*/
+
+.barraSuperior{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    flex-wrap:wrap;
+
+    width:100%;
+
+    margin-bottom:8px;
+
+}
+
+
+.barraSuperior select{
+
+    min-width:190px;
+
+    max-width:240px;
+
+    padding:9px;
+
+    border:
+        1px solid #ccc;
+
+    border-radius:7px;
+
+}
+
+
+.barraSuperior input{
+
+    flex:
+        1 1 250px;
+
+    min-width:180px;
+
+    padding:9px;
+
+    border:
+        1px solid #ccc;
+
+    border-radius:7px;
+
+}
+
+
+.barraSuperior button{
+
+    padding:9px 14px;
+
+    white-space:nowrap;
+
+}
+
+
+/*====================================================
+  CONTADOR
+====================================================*/
+
+#contadorResultados{
+
+    white-space:nowrap;
+
+    font-weight:bold;
+
+    color:#555;
+
+}
+
+
+/*====================================================
+  POI
+====================================================*/
+
+.poi-elemento{
+
+    background:transparent !important;
+
+    border:none !important;
+
+}
+
+
+.poi-pin{
+
+    position:relative;
+
+    width:44px;
+
+    height:52px;
+
+    display:flex;
+
+    align-items:flex-start;
+
+    justify-content:center;
+
+    filter:
+        drop-shadow(
+            0 3px 4px rgba(0,0,0,.35)
+        );
+
+}
+
+
+.poi-pin::before{
+
+    content:"";
+
+    position:absolute;
+
+    top:0;
+
+    left:1px;
+
+    width:42px;
+
+    height:42px;
+
+    border-radius:
+        50%
+        50%
+        50%
+        0;
+
+    transform:
+        rotate(-45deg);
+
+    background:#757575;
+
+    border:
+        3px solid #fff;
+
+    box-sizing:border-box;
+
+}
+
+
+.poi-icono{
+
+    position:absolute;
+
+    top:8px;
+
+    left:0;
+
+    width:44px;
+
+    height:34px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    z-index:2;
+
+    color:#fff;
+
+    font-size:20px;
+
+}
+
+
+.poi-icono i{
+
+    transform:none;
+
+}
+
+
+/*====================================================
+  COLORES
+====================================================*/
+
+.poi-elemento.rojo .poi-pin::before{
+    background:#e53935;
+}
+
+.poi-elemento.verde .poi-pin::before{
+    background:#43a047;
+}
+
+.poi-elemento.azul .poi-pin::before{
+    background:#1e88e5;
+}
+
+.poi-elemento.amarillo .poi-pin::before{
+    background:#fbc02d;
+}
+
+.poi-elemento.naranja .poi-pin::before{
+    background:#fb8c00;
+}
+
+.poi-elemento.violeta .poi-pin::before{
+    background:#8e24aa;
+}
+
+.poi-elemento.celeste .poi-pin::before{
+    background:#00acc1;
+}
+
+.poi-elemento.gris .poi-pin::before{
+    background:#757575;
+}
+
+.poi-elemento.blanco .poi-pin::before{
+
+    background:#fff;
+
+    border:
+        3px solid #777;
+
+}
+
+.poi-elemento.blanco .poi-icono{
+
+    color:#333;
+
+}
+
+.poi-elemento.rosa .poi-pin::before{
+    background:#ec407a;
+}
+
+.poi-elemento.cian .poi-pin::before{
+    background:#00bcd4;
+}
+
+
+/*====================================================
+  POI NUEVO
+====================================================*/
+
+.poi-elemento.nuevo .poi-pin::before{
+
+    background:#1976d2;
+
+    border:
+        3px solid #fff;
+
+}
+
+
+/*====================================================
+  HOVER
+====================================================*/
+
+.poi-elemento:hover .poi-pin{
+
+    filter:
+        drop-shadow(
+            0 5px 7px rgba(0,0,0,.45)
+        );
+
+}
+
+
+.poi-elemento:hover .poi-pin::before{
+
+    filter:
+        brightness(1.08);
+
+}
+
+
+/*====================================================
+  POPUP
+====================================================*/
+
+.popup-card{
+
+    width:280px;
+
+    max-width:
+        calc(100vw - 60px);
+
+    font-family:
+        Arial,
+        sans-serif;
+
+}
+
+
+.popup-card h2{
+
+    margin:0;
+
+    font-size:20px;
+
+    color:#0d47a1;
+
+}
+
+
+.popup-linea{
+
+    margin-top:10px;
+
+    font-size:15px;
+
+    line-height:1.5;
+
+}
+
+
+.popup-botones{
+
+    display:flex;
+
+    gap:10px;
+
+    margin-top:15px;
+
+}
+
+
+.btn-inspeccion{
+
+    flex:1;
+
+    background:#1976d2;
+
+    color:#fff;
+
+    border:none;
+
+    padding:10px;
+
+    border-radius:8px;
+
+    cursor:pointer;
+
+    font-weight:bold;
+
+}
+
+
+.btn-eliminar{
+
+    flex:1;
+
+    background:#d32f2f;
+
+    color:#fff;
+
+    border:none;
+
+    padding:10px;
+
+    border-radius:8px;
+
+    cursor:pointer;
+
+    font-weight:bold;
+
+}
+
+
+.estado-popup{
+
+    font-weight:bold;
+
+    color:#2e7d32;
+
+    font-size:16px;
+
+}
+
+
+/*====================================================
+  CAPAS LEAFLET
+====================================================*/
+
+.leaflet-control-layers{
+
+    border-radius:10px !important;
+
+    box-shadow:
+        0 3px 12px rgba(0,0,0,.25)
+        !important;
+
+    border:
+        1px solid #ddd
+        !important;
+
+}
+
+
+.leaflet-control-layers-expanded{
+
+    padding:10px 12px !important;
+
+}
+
+
+.leaflet-control-layers label{
+
+    font-size:14px;
+
+    line-height:1.8;
+
+}
+
+
+/*====================================================
+  TABLET
+====================================================*/
+
+@media(max-width:1100px){
+
+    .contenedorPrincipal{
+
+        grid-template-columns:
+            minmax(0,1fr)
+            300px;
+
+    }
+
+
+    #map{
+
+        min-height:400px;
+
+    }
+
+
+    .barraSuperior select{
+
+        min-width:160px;
+
+    }
+
+}
+
+
+/*====================================================
+  TABLET PEQUEÑA
+====================================================*/
+
+@media(max-width:850px){
+
+    .contenedorPrincipal{
+
+        display:flex;
+
+        flex-direction:column;
+
+        width:100%;
+
+    }
+
+
+    #map{
+
+        width:100%;
+
+        height:55vh;
+
+        min-height:400px;
+
+        max-height:600px;
+
+        order:1;
+
+    }
+
+
+    .panel{
+
+        width:100%;
+
+        max-height:none;
+
+        overflow:visible;
+
+        order:2;
+
+        padding:18px;
+
+    }
+
+
+    .barraSuperior{
+
+        display:grid;
+
+        grid-template-columns:
+            1fr
+            1fr;
+
+        gap:8px;
+
+    }
+
+
+    .barraSuperior select,
+    .barraSuperior input,
+    .barraSuperior button{
+
+        width:100%;
+
+        max-width:none;
+
+        min-width:0;
+
+        min-height:40px;
+
+    }
+
+
+    .barraSuperior input{
+
+        grid-column:
+            1 / -1;
+
+    }
+
+
+    #contadorResultados{
+
+        text-align:center;
+
+    }
+
+}
+
+
+/*====================================================
+  CELULAR
+====================================================*/
+
+@media(max-width:600px){
+
+    .contenedorPrincipal{
+
+        display:flex;
+
+        flex-direction:column;
+
+        gap:12px;
+
+    }
+
+
+    #map{
+
+        width:100%;
+
+        height:55vh;
+
+        min-height:300px;
+
+        max-height:500px;
+
+        margin:0;
+
+        border-radius:10px;
+
+    }
+
+
+    .panel{
+
+        width:100%;
+
+        max-height:none;
+
+        overflow:visible;
+
+        padding:15px;
+
+        border-radius:10px;
+
+    }
+
+
+    .barraSuperior{
+
+        display:flex;
+
+        flex-direction:column;
+
+        align-items:stretch;
+
+        gap:8px;
+
+    }
+
+
+    .barraSuperior select,
+    .barraSuperior input,
+    .barraSuperior button{
+
+        width:100%;
+
+        max-width:none;
+
+        min-width:0;
+
+        min-height:40px;
+
+    }
+
+
+    #contadorResultados{
+
+        text-align:center;
+
+        padding:4px 0;
+
+    }
+
+
+    .popup-card{
+
+        width:260px;
+
+    }
+
+
+    .popup-botones{
+
+        flex-direction:column;
+
+    }
+
+
+    .btn-inspeccion,
+    .btn-eliminar{
+
+        width:100%;
+
+    }
+
+
+    .leaflet-control-layers{
+
+        margin-top:10px !important;
+
+        margin-right:10px !important;
+
+    }
+
+
+    .leaflet-control-layers-expanded{
+
+        max-width:
+            calc(100vw - 30px);
+
+    }
+
+}
+
+
+/*====================================================
+  CELULAR PEQUEÑO
+====================================================*/
+
+@media(max-width:450px){
+
+    #map{
+
+        height:48vh;
+
+        min-height:280px;
+
+        max-height:420px;
+
+    }
+
+
+    .poi-pin{
+
+        width:40px;
+
+        height:48px;
+
+    }
+
+
+    .poi-pin::before{
+
+        width:38px;
+
+        height:38px;
+
+    }
+
+
+    .poi-icono{
+
+        width:40px;
+
+        font-size:18px;
+
+    }
+
+
+    .panel{
+
+        padding:13px;
+
+    }
+
+
+    .popup-card{
+
+        width:
+            calc(100vw - 70px);
+
+    }
+
+}
+
+
+/*====================================================
+  EVITAR QUE EL MAPA BLOQUEE EL SCROLL
+====================================================*/
+
+@media(max-width:600px){
+
+    .contenido{
+
+        overflow:visible !important;
+
+        height:auto !important;
+
+        min-height:100vh;
+
+    }
+
+
+    body{
+
+        overflow-x:hidden;
+
+        overflow-y:auto;
+
+    }
+
+}
+/*====================================================
+  TEXTO DE LOS CAMPOS DEL PANEL
+====================================================*/
+
+.panel label{
+
+    color:#222 !important;
+
+    font-weight:700;
+
+    opacity:1;
+
+}
+
+
+.panel h2{
+
+    color:#0d47a1 !important;
+
+}
+
+
+.panel input,
+.panel select,
+.panel textarea{
+
+    color:#222 !important;
+
+    background:#fff !important;
+
+}
+
+
+.panel input::placeholder,
+.panel textarea::placeholder{
+
+    color:#777 !important;
+
+    opacity:1;
+
+}
+/*====================================================
+  PANEL NUEVO ELEMENTO
+====================================================*/
+
+.panel h2,
+.panel label{
+
+    color:#222 !important;
+
+    font-weight:700 !important;
+
+    opacity:1 !important;
+
+}
+
+
+.panel input,
+.panel select,
+.panel textarea{
+
+    color:#222 !important;
+
+    background:#ffffff !important;
+
+}
+
+
+.panel select{
+
+    color:#222 !important;
+
+}
+
+
+.panel input::placeholder,
+.panel textarea::placeholder{
+
+    color:#666 !important;
+
+    opacity:1 !important;
+
+}

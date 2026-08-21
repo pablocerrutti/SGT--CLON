@@ -1,0 +1,285 @@
+/*==================================================
+SGT - INFORMES
+==================================================*/
+
+
+body{
+
+    background:#f4f6f9;
+
+}
+
+
+/*==================================================
+CABECERA
+==================================================*/
+
+
+.cabecera{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-bottom:20px;
+
+}
+
+
+.cabecera h1{
+
+    margin:0;
+
+    color:#0d47a1;
+
+}
+
+
+.cabecera p{
+
+    margin-top:8px;
+
+    color:#555;
+
+}
+
+
+
+.cabecera button{
+
+    background:#1565c0;
+
+    color:white;
+
+    border:none;
+
+    padding:12px 20px;
+
+    border-radius:8px;
+
+    cursor:pointer;
+
+    font-weight:bold;
+
+}
+
+
+
+.cabecera button:hover{
+
+    background:#0d47a1;
+
+}
+
+
+
+/*==================================================
+FILTROS
+==================================================*/
+
+
+.filtros{
+
+    background:white;
+
+    padding:20px;
+
+    border-radius:12px;
+
+    box-shadow:0 4px 12px rgba(0,0,0,.15);
+
+    display:flex;
+
+    gap:15px;
+
+    margin-bottom:20px;
+
+}
+
+
+
+.filtros select,
+
+.filtros input{
+
+    padding:10px;
+
+    border-radius:8px;
+
+    border:1px solid #ccc;
+
+    font-size:15px;
+
+}
+
+
+
+.filtros input{
+
+    flex:1;
+
+}
+
+
+
+.filtros button{
+
+    background:#2e7d32;
+
+    color:white;
+
+    border:none;
+
+    padding:10px 18px;
+
+    border-radius:8px;
+
+    cursor:pointer;
+
+    font-weight:bold;
+
+}
+
+
+
+.filtros button:hover{
+
+    background:#1b5e20;
+
+}
+
+
+
+/*==================================================
+TABLA
+==================================================*/
+
+
+section{
+
+    background:white;
+
+    padding:20px;
+
+    border-radius:12px;
+
+    box-shadow:0 4px 12px rgba(0,0,0,.12);
+
+}
+
+
+
+table{
+
+    width:100%;
+
+    border-collapse:collapse;
+
+    margin-top:15px;
+
+}
+
+
+
+thead{
+
+    background:#0d47a1;
+
+    color:white;
+
+}
+
+
+
+th{
+
+    padding:12px;
+
+    text-align:left;
+
+}
+
+
+
+td{
+
+    padding:12px;
+
+    border-bottom:1px solid #ddd;
+
+}
+
+
+
+tbody tr:hover{
+
+    background:#eef5ff;
+
+}
+
+
+
+/*==================================================
+MENSAJES
+==================================================*/
+
+
+#mensaje{
+
+    padding:10px;
+
+    font-weight:bold;
+
+}
+
+
+
+.exito{
+
+    color:#2e7d32;
+
+}
+
+
+
+.error{
+
+    color:#c62828;
+
+}
+
+
+
+/*==================================================
+RESPONSIVE
+==================================================*/
+
+
+@media(max-width:800px){
+
+
+    .filtros{
+
+        flex-direction:column;
+
+    }
+
+
+    table{
+
+        font-size:13px;
+
+    }
+
+
+    th,
+    td{
+
+        padding:8px;
+
+    }
+
+
+}

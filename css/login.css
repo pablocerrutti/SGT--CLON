@@ -1,0 +1,243 @@
+/* ==========================================
+   LOGIN - SGT
+==========================================*/
+
+.login-container{
+
+    display:flex;
+
+    width:100%;
+
+    height:100vh;
+
+}
+
+/*========================================*/
+
+.login-left{
+
+    width:50%;
+
+    background:linear-gradient(135deg,#071421,#12395a);
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    padding:50px;
+
+}
+
+/*========================================*/
+
+.logo-box{
+
+    text-align:center;
+
+}
+
+.logo{
+
+    width:170px;
+
+    margin-bottom:25px;
+
+}
+
+.logo-box h1{
+
+    font-size:78px;
+
+    color:#38bdf8;
+
+    text-shadow:0 0 20px #0284c7;
+
+    margin-bottom:10px;
+
+}
+
+.logo-box h2{
+
+    color:white;
+
+    font-weight:300;
+
+    margin-bottom:15px;
+
+}
+
+.logo-box p{
+
+    color:#cbd5e1;
+
+    margin-bottom:8px;
+
+}
+
+.logo-box small{
+
+    color:#94a3b8;
+
+    font-size:13px;
+
+}
+
+/*========================================*/
+
+.login-right{
+
+    width:50%;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    background:#eef3f8;
+
+}
+
+/*========================================*/
+
+.card-login{
+
+    width:430px;
+
+    background:white;
+
+    border-radius:14px;
+
+    padding:40px;
+
+    box-shadow:0 20px 40px rgba(0,0,0,.18);
+
+}
+
+.card-login h2{
+
+    color:#17375e;
+
+    margin-bottom:10px;
+
+}
+
+.card-login p{
+
+    color:#666;
+
+    margin-bottom:25px;
+
+}
+
+.card-login label{
+
+    display:block;
+
+    margin-top:18px;
+
+    margin-bottom:8px;
+
+    color:#17375e;
+
+    font-weight:bold;
+
+}
+
+.card-login input{
+
+    background:white;
+
+    color:#17375e;
+
+    border:1px solid #d7d7d7;
+
+}
+
+.card-login input:focus{
+
+    border:1px solid #0284c7;
+
+}
+
+/*========================================*/
+
+.card-login button{
+
+    width:100%;
+
+    margin-top:30px;
+
+    padding:14px;
+
+    font-size:16px;
+
+}
+
+/*========================================*/
+
+#mensaje{
+
+    margin-top:20px;
+
+    text-align:center;
+
+    font-weight:bold;
+
+    min-height:20px;
+
+}
+
+/*========================================*/
+
+@media(max-width:900px){
+
+.login-container{
+
+    flex-direction:column;
+
+}
+
+.login-left{
+
+    width:100%;
+
+    height:35%;
+
+}
+
+.login-right{
+
+    width:100%;
+
+    height:65%;
+
+}
+
+.card-login{
+
+    width:92%;
+
+}
+
+.logo{
+
+    width:110px;
+
+}
+
+.logo-box h1{
+
+    font-size:48px;
+
+}
+
+.logo-box h2{
+
+    font-size:20px;
+
+}
+
+}
