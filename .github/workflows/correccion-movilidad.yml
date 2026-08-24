@@ -1,4 +1,4 @@
-name: SGT - Correcciones y ZIP
+name: SGT - Correccion geometrias
 
 on:
   push:
@@ -8,89 +8,53 @@ on:
 permissions:
   contents: write
 
-env:
-  ZIP_NAME: SGT--CLON-CORREGIDO.zip
-
 jobs:
-  corregir-y-empaquetar:
+  corregir:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Aplicar integración de correcciones
+      - name: Corregir mapa.js
         shell: python
         run: |
           from pathlib import Path
+          p = Path('modulos/movilidad/mapa.js')
+          s = p.read_text(encoding='utf-8')
 
-          # Cargar los módulos de corrección después de los originales.
-          mapa_html = Path('modulos/movilidad/mapa.html')
-          texto = mapa_html.read_text(encoding='utf-8')
-          tag = '<script src="mapa-filtros-fix.js"></script>'
-          if tag not in texto:
-              texto = texto.replace(
-                  '<script src="mapa.js"></script>',
-                  '<script src="mapa.js"></script>\n' + tag
-              )
-              mapa_html.write_text(texto, encoding='utf-8')
+          old = '''    actualizarTextoAyuda(\n        "Complete los datos del tramo de estacionamiento tarifado y guarde."\n    );\n\n\n    const estadoZona ='''
+          new = '''    actualizarTextoAyuda(\n        "Complete los datos del tramo de estacionamiento tarifado y guarde."\n    );\n\n    // El segundo punto cierra el modo dibujo, conservando la linea y coordenadas.\n    dibujandoZona = false;\n    if (mapa) mapa.getContainer().style.cursor = "";\n    const btnNuevaZona = document.getElementById("btnNuevaZona");\n    const btnCancelarZona = document.getElementById("btnCancelarZona");\n    if (btnNuevaZona) btnNuevaZona.style.display = "inline-block";\n    if (btnCancelarZona) btnCancelarZona.style.display = "inline-block";\n\n    const estadoZona ='''
+          if old not in s: raise SystemExit('No se encontró finalización de zona')
+          s = s.replace(old, new, 1)
 
-          informes_html = Path('modulos/informes/informes.html')
-          texto = informes_html.read_text(encoding='utf-8')
-          tag = '<script src="informes-fix.js"></script>'
-          if tag not in texto:
-              texto = texto.replace(
-                  '<script src="informes.js"></script>',
-                  '<script src="informes.js"></script>\n' + tag
-              )
-              informes_html.write_text(texto, encoding='utf-8')
+          old = '''    actualizarTextoAyuda(\n        "Complete los datos del cordón rojo y guarde."\n    );\n\n\n    const estadoZona ='''
+          new = '''    actualizarTextoAyuda(\n        "Complete los datos del cordón rojo y guarde."\n    );\n\n    // El segundo punto cierra el modo dibujo, conservando la linea y coordenadas.\n    dibujandoCordon = false;\n    if (mapa) mapa.getContainer().style.cursor = "";\n    const btnNuevoCordon = document.getElementById("btnNuevoCordon");\n    const btnCancelarCordon = document.getElementById("btnCancelarCordon");\n    if (btnNuevoCordon) btnNuevoCordon.style.display = "inline-block";\n    if (btnCancelarCordon) btnCancelarCordon.style.display = "inline-block";\n\n    const estadoZona ='''
+          if old not in s: raise SystemExit('No se encontró finalización de cordón')
+          s = s.replace(old, new, 1)
 
-          # Los elementos normales deben conservar la localidad seleccionada
-          # al momento de guardarlos. Se agrega solo si aún no existe.
-          mapa = Path('modulos/movilidad/mapa.js')
-          texto = mapa.read_text(encoding='utf-8')
-          patron = '''        longitud:\n            document.getElementById(\n                "lng"\n            )?.value || ""\n\n    };'''
-          reemplazo = '''        longitud:\n            document.getElementById(\n                "lng"\n            )?.value || "",\n\n        ciudad:\n            document.getElementById(\n                "filtroLocalidad"\n            )?.value || "",\n\n        localidad:\n            document.getElementById(\n                "filtroLocalidad"\n            )?.value || ""\n\n    };'''
-          if patron in texto:
-              texto = texto.replace(patron, reemplazo, 1)
-              mapa.write_text(texto, encoding='utf-8')
+          if 'JSON.stringify(puntosZona);' in s:
+              s = s.replace('JSON.stringify(puntosZona);', 'JSON.stringify(puntosZona.slice(0, 2));', 1)
+          p.write_text(s, encoding='utf-8')
 
-      - name: Verificar archivos
+      - name: Verificar
         shell: bash
         run: |
+          grep -q 'dibujandoZona = false' modulos/movilidad/mapa.js
+          grep -q 'dibujandoCordon = false' modulos/movilidad/mapa.js
+          grep -q 'puntosZona.slice(0, 2)' modulos/movilidad/mapa.js
+          grep -q 'puntosCordon.slice(0, 2)' modulos/movilidad/mapa.js
           test -f modulos/movilidad/mapa-filtros-fix.js
-          test -f modulos/informes/informes-fix.js
-          grep -q 'mapa-filtros-fix.js' modulos/movilidad/mapa.html
-          grep -q 'informes-fix.js' modulos/informes/informes.html
-          grep -q 'puntosZona.length >= 2' modulos/movilidad/mapa.js
-          grep -q 'puntosCordon.length === 2' modulos/movilidad/mapa.js
 
-      - name: Guardar correcciones en main
+      - name: Commit
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add modulos/movilidad/mapa.html modulos/movilidad/mapa.js modulos/informes/informes.html
+          git add modulos/movilidad/mapa.js
           if git diff --cached --quiet; then
-            echo "No hay cambios adicionales"
+            echo "Sin cambios"
           else
-            git commit -m "fix: integrar correcciones de movilidad e informes"
+            git commit -m "fix: finalizar cordon y estacionamiento en dos puntos"
             git push origin HEAD:main
           fi
-
-      - name: Crear ZIP completo
-        shell: bash
-        run: |
-          rm -f "$ZIP_NAME"
-          zip -r "$ZIP_NAME" . \
-            -x '.git/*' \
-               '.github/workflows/*' \
-               "$ZIP_NAME"
-
-      - name: Publicar ZIP
-        uses: actions/upload-artifact@v4
-        with:
-          name: SGT--CLON-CORREGIDO
-          path: ${{ env.ZIP_NAME }}
-          retention-days: 30
