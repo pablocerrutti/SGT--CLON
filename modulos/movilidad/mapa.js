@@ -2756,6 +2756,16 @@ async function guardarElemento(e) {
         longitud:
             document.getElementById(
                 "lng"
+            )?.value || "",
+
+        ciudad:
+            document.getElementById(
+                "filtroLocalidad"
+            )?.value || "",
+
+        localidad:
+            document.getElementById(
+                "filtroLocalidad"
             )?.value || ""
 
     };
