@@ -1,0 +1,134 @@
+name: Correccion SGT Movilidad
+
+on:
+  push:
+    paths:
+      - '.github/workflows/correccion-movilidad.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  corregir:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Aplicar correcciones
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          mapa = Path('modulos/movilidad/mapa.js')
+          texto = mapa.read_text(encoding='utf-8')
+
+          viejo = '''    if (\n        mostrandoZona ||\n        mostrandoCordon\n    ) {\n\n        if (mostrandoZona) {\n\n            mostrarZonasEstacionamiento(\n                true\n            );\n\n        }\n\n        if (mostrandoCordon) {\n\n            mostrarCordonesRojos(\n                true\n            );\n\n        }\n\n        actualizarContadorGeometrias();\n\n        // No hacer return: seguir renderizando elementos regulares encima\n    } else {\n\n        capaZonasEstacionamiento.clearLayers();\n        capaCordonesRojos.clearLayers();\n\n    }'''
+
+          nuevo = '''    // Cuando se selecciona una geometría especial, mostrar EXCLUSIVAMENTE\n    // esa categoría. No continuar renderizando los elementos normales.\n    if (mostrandoZona) {\n\n        capaCordonesRojos.clearLayers();\n        capaMarcadores.clearLayers();\n        mostrarZonasEstacionamiento(true);\n        actualizarContadorGeometrias();\n        return;\n\n    }\n\n    if (mostrandoCordon) {\n\n        capaZonasEstacionamiento.clearLayers();\n        capaMarcadores.clearLayers();\n        mostrarCordonesRojos(true);\n        actualizarContadorGeometrias();\n        return;\n\n    }\n\n    // Para cualquier categoría normal se ocultan las dos geometrías especiales.\n    capaZonasEstacionamiento.clearLayers();\n    capaCordonesRojos.clearLayers();'''
+
+          if viejo not in texto:
+              raise SystemExit('No se encontró el bloque de filtro de geometrías en mapa.js')
+          texto = texto.replace(viejo, nuevo, 1)
+
+          texto = texto.replace(
+              '"Dibuje la zona de estacionamiento tarifado sobre el mapa. Haga clic en los vértices y clic derecho para cerrar."',
+              '"Marque exactamente 2 puntos para definir el tramo de estacionamiento tarifado. El segundo punto cierra automáticamente."',
+              1
+          )
+          texto = texto.replace(
+              '"Haga clic en el mapa para marcar los vértices. Clic derecho para cerrar."',
+              '"Marque 2 puntos. El segundo punto finaliza automáticamente."',
+              1
+          )
+
+          # Asegurar que estacionamiento conserve exactamente los dos puntos.
+          texto = texto.replace(
+              'puntosZona.push([\n        e.latlng.lat,\n        e.latlng.lng\n    ]);',
+              'if (puntosZona.length >= 2) {\n        return;\n    }\n\n    puntosZona.push([\n        e.latlng.lat,\n        e.latlng.lng\n    ]);',
+              1
+          )
+
+          texto = texto.replace(
+              '"Dibuje el cordón rojo sobre el mapa. Haga clic siguiendo el borde y clic derecho para finalizar."',
+              '"Marque exactamente 2 puntos para definir el cordón rojo. El segundo punto finaliza automáticamente."',
+              1
+          )
+          texto = texto.replace(
+              '"Haga clic sobre el borde de la calle. Clic derecho para finalizar."',
+              '"Marque 2 puntos sobre el borde. El segundo punto finaliza automáticamente."',
+              1
+          )
+
+          # Cordón rojo: exactamente 2 puntos y cierre automático.
+          viejo_cordon = '''    if (!dibujandoCordon) {\n        return;\n    }\n\n\n    puntosCordon.push([\n        e.latlng.lat,\n        e.latlng.lng\n    ]);'''
+          nuevo_cordon = '''    if (!dibujandoCordon) {\n        return;\n    }\n\n    // El tramo se define exclusivamente con dos puntos.\n    if (puntosCordon.length >= 2) {\n        return;\n    }\n\n    puntosCordon.push([\n        e.latlng.lat,\n        e.latlng.lng\n    ]);'''
+          if viejo_cordon not in texto:
+              raise SystemExit('No se encontró agregarPuntoCordon en mapa.js')
+          texto = texto.replace(viejo_cordon, nuevo_cordon, 1)
+
+          viejo_estado = '''        estado.textContent =\n            "Puntos marcados: " +\n            puntosCordon.length +\n            ". Continúe o haga clic derecho para finalizar.";'''
+          nuevo_estado = '''        estado.textContent =\n            "Puntos marcados: " +\n            puntosCordon.length +\n            ".";'''
+          if viejo_estado not in texto:
+              raise SystemExit('No se encontró estado de puntos de cordón en mapa.js')
+          texto = texto.replace(viejo_estado, nuevo_estado, 1)
+
+          # Finalizar cordón automáticamente al colocar el segundo punto.
+          viejo_final = '''    if (estado) {\n\n        estado.textContent =\n            "Puntos marcados: " +\n            puntosCordon.length +\n            ".";\n\n    }\n\n}\n\n\n//--------------------------------------------------\n// FINALIZAR CORDON'''
+          nuevo_final = '''    if (estado) {\n\n        estado.textContent =\n            "Puntos marcados: " +\n            puntosCordon.length +\n            ".";\n\n    }\n\n    if (puntosCordon.length === 2) {\n        finalizarCordon();\n    }\n\n}\n\n\n//--------------------------------------------------\n// FINALIZAR CORDON'''
+          if viejo_final not in texto:
+              raise SystemExit('No se encontró el cierre automático del cordón en mapa.js')
+          texto = texto.replace(viejo_final, nuevo_final, 1)
+
+          # Evitar que un cierre posterior pueda conservar más de dos puntos.
+          texto = texto.replace(
+              'JSON.stringify(puntosCordon);',
+              'JSON.stringify(puntosCordon.slice(0, 2));',
+              1
+          )
+          mapa.write_text(texto, encoding='utf-8')
+
+          informes = Path('modulos/informes/informes.js')
+          texto = informes.read_text(encoding='utf-8')
+
+          viejo = '''        if(localidad && elemento.localidad !== localidad){\n            return false;\n        }'''
+          nuevo = '''        if(localidad && normalizar(elemento.localidad) !== normalizar(localidad)){\n            return false;\n        }'''
+          if viejo not in texto:
+              raise SystemExit('No se encontró filtro de localidad en informes.js')
+          texto = texto.replace(viejo, nuevo, 1)
+          informes.write_text(texto, encoding='utf-8')
+
+          # Verificaciones mínimas.
+          assert 'No hacer return: seguir renderizando elementos regulares encima' not in mapa.read_text(encoding='utf-8')
+          assert 'normalizar(elemento.localidad) !== normalizar(localidad)' in informes.read_text(encoding='utf-8')
+
+      - name: Commit de correcciones
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add modulos/movilidad/mapa.js modulos/informes/informes.js
+          if git diff --cached --quiet; then
+            echo "No hay cambios para guardar"
+          else
+            git commit -m "fix: filtros de categorias, geometria de 2 puntos y localidades"
+            git push origin HEAD:main
+          fi
+
+      - name: Empaquetar proyecto corregido
+        shell: bash
+        run: |
+          zip -r SGT--CLON-CORREGIDO.zip . \
+            -x '.git/*' \
+               '.github/workflows/*' \
+               'SGT--CLON-CORREGIDO.zip'
+
+      - name: Publicar ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: SGT--CLON-CORREGIDO
+          path: SGT--CLON-CORREGIDO.zip
+          retention-days: 30
