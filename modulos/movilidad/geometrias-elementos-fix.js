@@ -53,9 +53,6 @@
 
     async function registrarEnElementos(datos, respuesta) {
         const elemento = construirElemento(datos, respuesta);
-
-        // La hoja Elementos es el índice maestro para búsqueda y filtros.
-        // No impedimos el guardado original en las hojas especializadas.
         const resultado = await apiGuardarElemento(elemento);
 
         if (!resultado || !resultado.ok) {
@@ -69,38 +66,30 @@
         return true;
     }
 
-    // Guardado de Estacionamiento Tarifado: conserva la hoja especializada
-    // y agrega el mismo registro conceptual a Elementos.
     window.guardarZonaEnServidor = async function (datos) {
         try {
             const estado = document.getElementById("estadoZona");
             if (estado) estado.textContent = "Guardando estacionamiento tarifado...";
 
-            const usuario = typeof obtenerUsuarioActual === "function"
-                ? obtenerUsuarioActual()
-                : {};
-
+            const usuario = typeof obtenerUsuarioActual === "function" ? obtenerUsuarioActual() : {};
             datos.usuario = usuario.nombre || usuario.usuario || "admin";
             datos.coordenadas = JSON.stringify(leerPuntos(datos.coordenadas));
 
             const respuesta = await apiGuardarZonaEstacionamiento(datos);
-
             if (!respuesta || !respuesta.ok) {
                 throw new Error(respuesta?.mensaje || "No fue posible guardar el estacionamiento tarifado.");
             }
 
             const indexado = await registrarEnElementos(datos, respuesta);
-
             mostrarMensaje(
                 indexado
                     ? "Estacionamiento tarifado guardado y registrado como elemento."
-                    : "Estacionamiento tarifado guardado. Aviso: no pudo indexarse como elemento.",
+                    : "Estacionamiento tarifado guardado, pero no pudo indexarse como elemento.",
                 indexado ? "exito" : "error"
             );
 
             const form = document.getElementById("formElemento");
             if (form) form.reset();
-
             if (typeof limpiarDibujoZona === "function") limpiarDibujoZona();
             if (typeof cargarZonasEstacionamiento === "function") await cargarZonasEstacionamiento();
             if (typeof cargarElementos === "function") await cargarElementos();
@@ -111,38 +100,30 @@
         }
     };
 
-    // Guardado de Cordón Rojo: conserva la hoja especializada
-    // y agrega el mismo registro conceptual a Elementos.
     window.guardarCordonRojoEnServidor = async function (datos) {
         try {
             const estado = document.getElementById("estadoZona");
             if (estado) estado.textContent = "Guardando cordón rojo...";
 
-            const usuario = typeof obtenerUsuarioActual === "function"
-                ? obtenerUsuarioActual()
-                : {};
-
+            const usuario = typeof obtenerUsuarioActual === "function" ? obtenerUsuarioActual() : {};
             datos.usuario = usuario.nombre || usuario.usuario || "admin";
             datos.coordenadas = JSON.stringify(leerPuntos(datos.coordenadas));
 
             const respuesta = await apiGuardarCordonRojo(datos);
-
             if (!respuesta || !respuesta.ok) {
                 throw new Error(respuesta?.mensaje || "No fue posible guardar el cordón rojo.");
             }
 
             const indexado = await registrarEnElementos(datos, respuesta);
-
             mostrarMensaje(
                 indexado
                     ? "Cordón rojo guardado y registrado como elemento."
-                    : "Cordón rojo guardado. Aviso: no pudo indexarse como elemento.",
+                    : "Cordón rojo guardado, pero no pudo indexarse como elemento.",
                 indexado ? "exito" : "error"
             );
 
             const form = document.getElementById("formElemento");
             if (form) form.reset();
-
             if (typeof limpiarDibujoCordon === "function") limpiarDibujoCordon();
             if (typeof cargarCordonesRojos === "function") await cargarCordonesRojos();
             if (typeof cargarElementos === "function") await cargarElementos();
@@ -153,8 +134,6 @@
         }
     };
 
-    // Cuando se realiza una búsqueda, las geometrías especiales se dibujan
-    // desde Elementos para que participen del mismo buscador que el resto.
     const renderOriginal = window.renderizarMapaCompleto;
 
     window.renderizarMapaCompleto = function () {
@@ -163,7 +142,7 @@
     };
 
     function dibujarEspecialesDesdeElementosEnBusqueda() {
-        if (!window.mapa || !window.L || !window.elementos) return;
+        if (typeof mapa === "undefined" || typeof elementos === "undefined") return;
 
         const buscar = document.getElementById("buscar");
         const filtroTipo = document.getElementById("filtroTipo");
@@ -173,14 +152,18 @@
         const tipo = normalizarLocal(filtroTipo?.value);
         const localidad = normalizarLocal(filtroLocalidad?.value);
 
-        // Sin búsqueda, las capas especializadas existentes siguen siendo
-        // responsables de la visualización inicial para no romper datos antiguos.
+        // Sin búsqueda, las capas especializadas continúan mostrando
+        // los registros históricos. Con búsqueda, se usa Elementos.
         if (!texto) return;
 
-        if (window.capaZonasEstacionamiento) window.capaZonasEstacionamiento.clearLayers();
-        if (window.capaCordonesRojos) window.capaCordonesRojos.clearLayers();
+        if (typeof capaZonasEstacionamiento !== "undefined" && capaZonasEstacionamiento) {
+            capaZonasEstacionamiento.clearLayers();
+        }
+        if (typeof capaCordonesRojos !== "undefined" && capaCordonesRojos) {
+            capaCordonesRojos.clearLayers();
+        }
 
-        window.elementos.forEach(function (elemento) {
+        elementos.forEach(function (elemento) {
             const tipoElemento = normalizarLocal(elemento.tipo);
             if (tipoElemento !== normalizarLocal(TIPO_ET) && tipoElemento !== normalizarLocal(TIPO_CR)) return;
 
