@@ -270,7 +270,7 @@ function renderizar(){
             return false;
         }
 
-        if(localidad && elemento.localidad !== localidad){
+        if(localidad && normalizar(elemento.localidad) !== normalizar(localidad)){
             return false;
         }
 

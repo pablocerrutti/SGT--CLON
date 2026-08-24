@@ -1049,7 +1049,7 @@ function manejarCambioTipo() {
     ) {
 
         actualizarTextoAyuda(
-            "Dibuje el cordón rojo sobre el mapa. Haga clic siguiendo el borde y clic derecho para finalizar."
+            "Marque exactamente 2 puntos para definir el cordón rojo. El segundo punto finaliza automáticamente."
         );
 
         if (!dibujandoCordon) {
@@ -1355,36 +1355,31 @@ function renderizarMarcadores() {
         );
 
 
-    if (
-        mostrandoZona ||
-        mostrandoCordon
-    ) {
+    // Cuando se selecciona una geometría especial, mostrar EXCLUSIVAMENTE
+    // esa categoría. No continuar renderizando los elementos normales.
+    if (mostrandoZona) {
 
-        if (mostrandoZona) {
-
-            mostrarZonasEstacionamiento(
-                true
-            );
-
-        }
-
-        if (mostrandoCordon) {
-
-            mostrarCordonesRojos(
-                true
-            );
-
-        }
-
-        actualizarContadorGeometrias();
-
-        // No hacer return: seguir renderizando elementos regulares encima
-    } else {
-
-        capaZonasEstacionamiento.clearLayers();
         capaCordonesRojos.clearLayers();
+        capaMarcadores.clearLayers();
+        mostrarZonasEstacionamiento(true);
+        actualizarContadorGeometrias();
+        return;
 
     }
+
+    if (mostrandoCordon) {
+
+        capaZonasEstacionamiento.clearLayers();
+        capaMarcadores.clearLayers();
+        mostrarCordonesRojos(true);
+        actualizarContadorGeometrias();
+        return;
+
+    }
+
+    // Para cualquier categoría normal se ocultan las dos geometrías especiales.
+    capaZonasEstacionamiento.clearLayers();
+    capaCordonesRojos.clearLayers();
 
 
     const visibles =
@@ -2940,7 +2935,7 @@ function iniciarDibujoZona() {
 
 
     actualizarTextoAyuda(
-        "Dibuje la zona de estacionamiento tarifado sobre el mapa. Haga clic en los vértices y clic derecho para cerrar."
+        "Marque exactamente 2 puntos para definir el tramo de estacionamiento tarifado. El segundo punto cierra automáticamente."
     );
 
 
@@ -2977,7 +2972,7 @@ function iniciarDibujoZona() {
     if (estadoZona) {
 
         estadoZona.textContent =
-            "Haga clic en el mapa para marcar los vértices. Clic derecho para cerrar.";
+            "Marque 2 puntos. El segundo punto finaliza automáticamente.";
 
         estadoZona.className =
             "dibujando";
@@ -3007,6 +3002,10 @@ function agregarPuntoZona(e) {
         return;
     }
 
+
+    if (puntosZona.length >= 2) {
+        return;
+    }
 
     puntosZona.push([
         e.latlng.lat,
@@ -3955,7 +3954,7 @@ function iniciarDibujoCordon() {
     if (estado) {
 
         estado.textContent =
-            "Haga clic sobre el borde de la calle. Clic derecho para finalizar.";
+            "Marque 2 puntos sobre el borde. El segundo punto finaliza automáticamente.";
 
         estado.className =
             "dibujando";
@@ -3985,6 +3984,10 @@ function agregarPuntoCordon(e) {
         return;
     }
 
+    // El tramo se define exclusivamente con dos puntos.
+    if (puntosCordon.length >= 2) {
+        return;
+    }
 
     puntosCordon.push([
         e.latlng.lat,
@@ -4038,8 +4041,12 @@ function agregarPuntoCordon(e) {
         estado.textContent =
             "Puntos marcados: " +
             puntosCordon.length +
-            ". Continúe o haga clic derecho para finalizar.";
+            ".";
 
+    }
+
+    if (puntosCordon.length === 2) {
+        finalizarCordon();
     }
 
 }
@@ -4070,7 +4077,7 @@ async function finalizarCordon() {
 
     // Poblar formulario con coordenadas y tipo
     document.getElementById("coordenadas").value =
-        JSON.stringify(puntosCordon);
+        JSON.stringify(puntosCordon.slice(0, 2));
 
     document.getElementById("tipo").value =
         TIPO_CORDON_ROJO;
