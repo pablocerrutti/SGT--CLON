@@ -3104,7 +3104,7 @@ async function finalizarZona() {
 
     // Poblar formulario con coordenadas y tipo
     document.getElementById("coordenadas").value =
-        JSON.stringify(puntosZona);
+        JSON.stringify(puntosZona.slice(0, 2));
 
     document.getElementById("tipo").value =
         TIPO_ZONA_ESTACIONAMIENTO;
@@ -3115,6 +3115,13 @@ async function finalizarZona() {
         "Complete los datos del tramo de estacionamiento tarifado y guarde."
     );
 
+    // El segundo punto cierra el modo dibujo, conservando la linea y coordenadas.
+    dibujandoZona = false;
+    if (mapa) mapa.getContainer().style.cursor = "";
+    const btnNuevaZona = document.getElementById("btnNuevaZona");
+    const btnCancelarZona = document.getElementById("btnCancelarZona");
+    if (btnNuevaZona) btnNuevaZona.style.display = "inline-block";
+    if (btnCancelarZona) btnCancelarZona.style.display = "inline-block";
 
     const estadoZona =
         document.getElementById(
@@ -4098,6 +4105,13 @@ async function finalizarCordon() {
         "Complete los datos del cordón rojo y guarde."
     );
 
+    // El segundo punto cierra el modo dibujo, conservando la linea y coordenadas.
+    dibujandoCordon = false;
+    if (mapa) mapa.getContainer().style.cursor = "";
+    const btnNuevoCordon = document.getElementById("btnNuevoCordon");
+    const btnCancelarCordon = document.getElementById("btnCancelarCordon");
+    if (btnNuevoCordon) btnNuevoCordon.style.display = "inline-block";
+    if (btnCancelarCordon) btnCancelarCordon.style.display = "inline-block";
 
     const estadoZona =
         document.getElementById(
