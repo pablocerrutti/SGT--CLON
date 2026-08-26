@@ -5,20 +5,15 @@
 
 function doGet(e) {
 
-  const accion = e.parameter.accion || "";
+  e = e || { parameter: {} };
+  e.parameter = e.parameter || {};
+
+  const accion = String(e.parameter.accion || "").trim();
 
   switch (accion) {
 
-    //=========================
-    // LOGIN
-    //=========================
-
     case "login":
       return json(login(e));
-
-    //=========================
-    // USUARIOS
-    //=========================
 
     case "obtenerUsuarios":
       return json(obtenerUsuarios());
@@ -29,9 +24,11 @@ function doGet(e) {
     case "eliminarUsuario":
       return json(eliminarUsuario(e));
 
-    //=========================
-    // ELEMENTOS
-    //=========================
+    case "obtenerCategorias":
+      return json(obtenerCategorias());
+
+    case "obtenerLocalidades":
+      return json(obtenerLocalidades());
 
     case "obtenerElementos":
       return json(obtenerElementos());
@@ -45,9 +42,26 @@ function doGet(e) {
     case "eliminarElemento":
       return json(eliminarElemento(e));
 
-    //=========================
-    // INSPECCIONES
-    //=========================
+    case "obtenerZonasEstacionamiento":
+      return json(obtenerZonasEstacionamiento(e));
+
+    case "guardarZonaEstacionamiento":
+      return json(guardarZonaEstacionamiento(e));
+
+    case "eliminarZonaEstacionamiento":
+      return json(eliminarZonaEstacionamiento(e));
+
+    case "obtenerCordonesRojos":
+      return json(obtenerCordonesRojos(e));
+
+    case "guardarCordonRojo":
+      return json(guardarCordonRojo(e));
+
+    case "eliminarCordonRojo":
+      return json(eliminarCordonRojo(e));
+
+    case "obtenerCatalogoElementosInformables":
+      return json(obtenerCatalogoElementosInformables());
 
     case "obtenerInspecciones":
       return json(obtenerInspecciones(e));
@@ -58,66 +72,20 @@ function doGet(e) {
     case "subirArchivo":
       return json(subirArchivo(e));
 
-    //=========================
-    // ZONAS DE ESTACIONAMIENTO
-    //=========================
-
-    case "obtenerZonasEstacionamiento":
-      return json(obtenerZonasEstacionamiento());
-
-    case "guardarZonaEstacionamiento":
-      return json(guardarZonaEstacionamiento(e));
-
-    case "eliminarZonaEstacionamiento":
-      return json(eliminarZonaEstacionamiento(e));
-
-    //=========================
-    // CORDONES ROJOS
-    //=========================
-
-    case "obtenerCordonesRojos":
-      return json(obtenerCordonesRojos());
-
-    case "guardarCordonRojo":
-      return json(guardarCordonRojo(e));
-
-    case "eliminarCordonRojo":
-      return json(eliminarCordonRojo(e));
-
-    //=========================
-    // CATÁLOGO INFORMABLE
-    //=========================
-
-    case "obtenerCatalogoElementosInformables":
-      return json(obtenerCatalogoElementosInformables());
-
-    //=========================
-    // FOTOS
-    //=========================
-
     default:
-
       return json({
-
         ok: false,
         mensaje: "Acción inválida: " + accion
-
       });
-
   }
-
 }
 
 function doPost(e) {
-
   return doGet(e);
-
 }
 
 function json(obj) {
-
   return ContentService
     .createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
-
 }
