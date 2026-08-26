@@ -49,11 +49,7 @@ async function cargarElementos(){
             ? (respuestaGeometrias.datos || []).map(normalizarElementoGeometrico)
             : [];
 
-        // Las geometrías especiales también se registran en Elementos.
-        // Se fusionan por ID para que el informe no duplique el registro y
-        // conserve la ficha completa de Movilidad junto con la línea.
         elementos = fusionarElementosInformables(normales, geometricos);
-
         cargarFiltros();
         renderizar();
     }
@@ -105,18 +101,24 @@ function normalizarElementoGeometrico(elemento){
 
 function fusionarElementosInformables(normales, geometricos){
     const resultado = [];
-    const porId = new Map();
+    const porClave = new Map();
 
     normales.forEach(function(elemento){
         const id = String(elemento.id || "").trim();
+        const codigo = String(elemento.codigo || "").trim().toUpperCase();
         const copia = Object.assign({}, elemento);
         resultado.push(copia);
-        if(id) porId.set(id, copia);
+
+        if(id) porClave.set("ID:" + id, copia);
+        if(codigo) porClave.set("CODIGO:" + codigo, copia);
     });
 
     geometricos.forEach(function(geometria){
         const id = String(geometria.id || "").trim();
-        const existente = id ? porId.get(id) : null;
+        const codigo = String(geometria.codigo || "").trim().toUpperCase();
+        const existente =
+            (id && porClave.get("ID:" + id)) ||
+            (codigo && porClave.get("CODIGO:" + codigo));
 
         if(!existente){
             resultado.push(geometria);
