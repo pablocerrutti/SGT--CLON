@@ -1,6 +1,8 @@
 //==================================================
 // SGT - INFORMES
-// Listado de elementos, zonas tarifadas y cordones
+// Solo elementos actuales (activos) de la hoja Elementos.
+// Las hojas de geometrías solo completan información de
+// elementos que ya existen actualmente en Elementos.
 //==================================================
 
 let elementos = [];
@@ -30,7 +32,7 @@ async function iniciar(){
 }
 
 async function cargarElementos(){
-    mensaje("Cargando elementos...", "");
+    mensaje("Cargando elementos actuales...", "");
     try{
         const respuestas = await Promise.all([
             apiObtenerElementos(),
@@ -44,7 +46,14 @@ async function cargarElementos(){
             throw new Error(respuestaElementos?.mensaje || "No se pudieron cargar los elementos.");
         }
 
-        const normales = (respuestaElementos.datos || []).map(normalizarElementoNormal);
+        // IMPORTANTE:
+        // Elementos es la fuente principal y actual del informe.
+        // Los registros antiguos que existan únicamente en
+        // ZonasEstacionamiento/Cordon Rojo NO se agregan al informe.
+        const normales = (respuestaElementos.datos || [])
+            .map(normalizarElementoNormal)
+            .filter(esElementoActual);
+
         const geometricos = respuestaGeometrias && respuestaGeometrias.ok
             ? (respuestaGeometrias.datos || []).map(normalizarElementoGeometrico)
             : [];
@@ -57,6 +66,20 @@ async function cargarElementos(){
         console.error("Error cargando informe:", error);
         mensaje(error.message || "No se pudieron cargar los elementos.", "error");
     }
+}
+
+function esElementoActual(elemento){
+    const activo = normalizar(elemento.activo || "");
+
+    // En Elementos, los registros actuales se guardan con Activo = SI.
+    // Admitimos también equivalentes habituales para compatibilidad.
+    return activo === "si" ||
+           activo === "sí" ||
+           activo === "yes" ||
+           activo === "true" ||
+           activo === "verdadero" ||
+           activo === "activo" ||
+           activo === "1";
 }
 
 function normalizarElementoNormal(elemento){
@@ -73,6 +96,7 @@ function normalizarElementoNormal(elemento){
         direccion: elemento.direccion || "",
         estado: elemento.estado || "Sin estado",
         caracteristicas: elemento.caracteristicas || "",
+        activo: elemento.activo || "",
         coordenadas: coordenadasPunto(elemento)
     };
 }
@@ -95,6 +119,7 @@ function normalizarElementoGeometrico(elemento){
         direccion: elemento.direccion || "",
         estado: elemento.estado || "Activo",
         caracteristicas: elemento.caracteristicas || "",
+        activo: elemento.activo || "SI",
         coordenadas: coordenadasGeometria(elemento.coordenadas)
     };
 }
@@ -120,15 +145,14 @@ function fusionarElementosInformables(normales, geometricos){
             (id && porClave.get("ID:" + id)) ||
             (codigo && porClave.get("CODIGO:" + codigo));
 
-        if(!existente){
-            resultado.push(geometria);
-            return;
-        }
+        // NO agregar geometrías huérfanas.
+        // Si un registro existe solamente en una hoja histórica de
+        // geometrías, queda fuera del informe.
+        if(!existente) return;
 
-        // La geometría aporta la línea real de dos puntos.
+        // La geometría únicamente completa al elemento ACTUAL.
         if(geometria.coordenadas) existente.coordenadas = geometria.coordenadas;
 
-        // Completar datos si el registro de Elementos antiguo no los tenía.
         ["localidad", "ciudad", "zona", "descripcion", "direccion", "caracteristicas", "estado"].forEach(function(campo){
             if(!existente[campo] && geometria[campo]) existente[campo] = geometria[campo];
         });
@@ -171,6 +195,8 @@ function renderizar(){
     const localidad = document.getElementById("filtroLocalidad").value;
 
     elementosFiltrados = elementos.filter(function(elemento){
+        // Protección adicional: jamás mostrar un registro inactivo.
+        if(!esElementoActual(elemento)) return false;
         if(tipo && normalizar(elemento.tipo) !== normalizar(tipo)) return false;
         if(estado && normalizar(elemento.estado) !== normalizar(estado)) return false;
         if(localidad && normalizar(elemento.localidad) !== normalizar(localidad)) return false;
@@ -206,7 +232,7 @@ function renderizar(){
         tabla.appendChild(fila);
     });
 
-    mensaje(elementosFiltrados.length + " elementos encontrados.", "exito");
+    mensaje(elementosFiltrados.length + " elementos actuales encontrados.", "exito");
 }
 
 function generarPDF(){
