@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SGT | Movilidad Urbana</title>
+<link rel="icon" href="../../img/logo.png">
+<link rel="stylesheet" href="../../css/estilos.css">
+<link rel="stylesheet" href="mapa.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+</head>
+<body>
+<aside class="sidebar">
+    <div class="logo">
+        <img src="../../img/logo.png" width="80" alt="SGT">
+        <h2>SGT</h2>
+        <p>Movilidad Urbana</p>
+    </div>
+    <ul>
+        <li class="activo"><i class="fa-solid fa-map-location-dot"></i>Mapa</li>
+        <li id="btnInformes"><i class="fa-solid fa-file-lines"></i>Informes</li>
+        <li id="btnDashboard"><i class="fa-solid fa-house"></i>Dashboard</li>
+        <li id="btnSalir"><i class="fa-solid fa-right-from-bracket"></i>Salir</li>
+    </ul>
+</aside>
+<main class="contenido">
+<header>
+    <div>
+        <h1>Mapa de Movilidad Urbana</h1>
+        <p>Seleccione un punto del mapa para registrar un nuevo elemento.</p>
+    </div>
+    <div id="usuarioActual"></div>
+</header>
+<div class="barraSuperior">
+    <select id="filtroLocalidad" aria-label="Filtrar por localidad"><option value="">Todas las localidades</option></select>
+    <select id="filtroTipo" aria-label="Filtrar por tipo"></select>
+    <input type="search" id="buscar" placeholder="Buscar por código, nombre o dirección">
+    <span id="contadorResultados" aria-live="polite"></span>
+    <button id="btnActualizar" type="button"><i class="fa-solid fa-rotate"></i>Actualizar</button>
+</div>
+<div class="zonaEstacionamientoBarra" style="display:none;">
+    <button type="button" id="btnNuevaZona"><i class="fa-solid fa-draw-polygon"></i>Dibujar zona de estacionamiento</button>
+    <button type="button" id="btnCancelarZona" style="display:none;"><i class="fa-solid fa-xmark"></i>Cancelar zona</button>
+    <span id="estadoZona"></span>
+</div>
+<div class="zonaEstacionamientoBarra" style="display:none;">
+    <button type="button" id="btnNuevoCordon"><i class="fa-solid fa-road"></i>Dibujar cordón rojo</button>
+    <button type="button" id="btnCancelarCordon" style="display:none;"><i class="fa-solid fa-xmark"></i>Cancelar cordón</button>
+    <span id="estadoCordon"></span>
+</div>
+<p id="mensajeMapa" class="mensaje" aria-live="polite"></p>
+<div class="contenedorPrincipal">
+    <div id="map" aria-label="Mapa de elementos de movilidad"></div>
+    <section class="panel">
+        <h2>Nuevo elemento</h2>
+        <form id="formElemento">
+            <label for="tipo">Tipo</label><select id="tipo" required></select>
+            <label for="codigo">Código</label><input id="codigo" type="text" readonly placeholder="Se asigna al guardar">
+            <label for="serie">Serie</label><input id="serie" type="text" readonly placeholder="Se asigna al guardar">
+            <label for="nombre">Nombre</label><input id="nombre" type="text" required maxlength="120">
+            <label for="descripcion">Descripción</label><textarea id="descripcion" maxlength="1000"></textarea>
+            <label for="direccion">Dirección</label><input id="direccion" type="text" maxlength="200">
+            <label for="estado">Estado</label><select id="estado"><option>Activo</option><option>En reparación</option><option>Fuera de servicio</option><option>Retirado</option></select>
+            <label for="caracteristicas">Características</label><textarea id="caracteristicas" maxlength="1000"></textarea>
+            <input type="hidden" id="lat"><input type="hidden" id="lng"><input type="hidden" id="coordenadas">
+            <button type="submit"><i class="fa-solid fa-floppy-disk"></i>Guardar elemento</button>
+        </form>
+    </section>
+</div>
+</main>
+<script src="../../js/api.js"></script>
+<script src="../../js/integridad-elementos-fix.js?v=20260826-1"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="mapa.js?v=20260824-1415"></script>
+<script src="mapa-filtros-fix.js?v=20260824-1415"></script>
+</body>
+</html>
