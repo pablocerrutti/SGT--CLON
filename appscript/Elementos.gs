@@ -62,7 +62,6 @@ function actualizarElemento(e) {
   try {
     const sh = hoja('Elementos'); const fila = buscarFila(sh, id);
     if (fila === -1) return {ok:false,mensaje:'Elemento no encontrado.'};
-    // Código, tipo y serie son identificadores inmutables asignados al alta.
     sh.getRange(fila, 5, 1, 7).setValues([[String(p.nombre || '').trim(),String(p.descripcion || '').trim(),coordenadas.latitud,coordenadas.longitud,String(p.direccion || '').trim(),String(p.estado || '').trim(),String(p.caracteristicas || '').trim()]]);
     sh.getRange(fila, 14, 1, 2).setValues([[ahora(),String(p.usuario || 'admin').trim() || 'admin']]);
     return {ok:true,mensaje:'Elemento actualizado.'};
@@ -81,21 +80,3 @@ function validarCoordenadas_(latitud, longitud) {
   return {ok:true,latitud:lat,longitud:lng};
 }
 function asegurarColumnasTerritoriales_(sh){if(sh.getLastColumn()<19){sh.getRange(1,17,1,3).setValues([['Ciudad','Localidad','Zona']]);}}
-
-function obtenerCatalogoElementosInformables() {
-  try {
-    const catElem = obtenerElementos();
-    const catZonas = obtenerZonasEstacionamiento();
-    const catCordones = obtenerCordonesRojos();
-    const elementos = (catElem.ok ? catElem.datos : []).map(function(e) {
-      return {id:e.id,codigo:e.codigo,tipo:e.tipo,nombre:e.nombre,descripcion:e.descripcion,direccion:e.direccion,estado:e.estado,caracteristicas:e.caracteristicas,localidad:e.localidad,origen:'elemento'};
-    });
-    const zonas = (catZonas.ok ? catZonas.datos : []).map(function(z) {
-      return {id:z.id,codigo:z.codigo,tipo:z.tipo,nombre:z.nombre,descripcion:z.descripcion,direccion:z.direccion,estado:z.estado,caracteristicas:z.caracteristicas,localidad:z.localidad,origen:'zona'};
-    });
-    const cordones = (catCordones.ok ? catCordones.datos : []).map(function(c) {
-      return {id:c.id,codigo:c.codigo,tipo:c.tipo,nombre:c.nombre,descripcion:c.descripcion,direccion:c.direccion,estado:c.estado,caracteristicas:c.caracteristicas,localidad:c.localidad,origen:'cordon'};
-    });
-    return {ok:true, datos: elementos.concat(zonas).concat(cordones)};
-  } catch (error) { return {ok:false, mensaje:'No fue posible obtener el catálogo informable: ' + error.message}; }
-}
