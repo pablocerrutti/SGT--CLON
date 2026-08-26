@@ -34,29 +34,49 @@ async function iniciar(){
 async function cargarElementos(){
     mensaje("Cargando elementos actuales...", "");
     try{
+        // NO utilizar obtenerCatalogoElementosInformables:
+        // esa acción no está publicada en la implementación actual
+        // de Apps Script y provocaba el error HTTP 404.
+        // Consultamos directamente las tres fuentes existentes.
         const respuestas = await Promise.all([
             apiObtenerElementos(),
-            apiObtenerCatalogoElementosInformables()
+            apiObtenerCordonesRojos(),
+            apiObtenerZonasEstacionamiento()
         ]);
 
         const respuestaElementos = respuestas[0];
-        const respuestaGeometrias = respuestas[1];
+        const respuestaCordones = respuestas[1];
+        const respuestaZonas = respuestas[2];
 
         if(!respuestaElementos || !respuestaElementos.ok){
             throw new Error(respuestaElementos?.mensaje || "No se pudieron cargar los elementos.");
         }
 
-        // IMPORTANTE:
-        // Elementos es la fuente principal y actual del informe.
-        // Los registros antiguos que existan únicamente en
-        // ZonasEstacionamiento/Cordon Rojo NO se agregan al informe.
         const normales = (respuestaElementos.datos || [])
             .map(normalizarElementoNormal)
             .filter(esElementoActual);
 
-        const geometricos = respuestaGeometrias && respuestaGeometrias.ok
-            ? (respuestaGeometrias.datos || []).map(normalizarElementoGeometrico)
-            : [];
+        // Las geometrías se consultan directamente. Si una hoja no responde,
+        // no impedimos que se muestren los elementos normales.
+        const geometricos = [];
+
+        if(respuestaCordones && respuestaCordones.ok && Array.isArray(respuestaCordones.datos)){
+            respuestaCordones.datos.forEach(function(e){
+                geometricos.push(normalizarElementoGeometrico(Object.assign({}, e, {
+                    tipo: "Cordón Rojo",
+                    tipoElemento: "CORDON_ROJO"
+                })));
+            });
+        }
+
+        if(respuestaZonas && respuestaZonas.ok && Array.isArray(respuestaZonas.datos)){
+            respuestaZonas.datos.forEach(function(e){
+                geometricos.push(normalizarElementoGeometrico(Object.assign({}, e, {
+                    tipo: "Estacionamiento Tarifado",
+                    tipoElemento: "ZONA_ESTACIONAMIENTO"
+                })));
+            });
+        }
 
         elementos = fusionarElementosInformables(normales, geometricos);
         cargarFiltros();
@@ -70,16 +90,9 @@ async function cargarElementos(){
 
 function esElementoActual(elemento){
     const activo = normalizar(elemento.activo || "");
-
-    // En Elementos, los registros actuales se guardan con Activo = SI.
-    // Admitimos también equivalentes habituales para compatibilidad.
-    return activo === "si" ||
-           activo === "sí" ||
-           activo === "yes" ||
-           activo === "true" ||
-           activo === "verdadero" ||
-           activo === "activo" ||
-           activo === "1";
+    return activo === "si" || activo === "sí" || activo === "yes" ||
+           activo === "true" || activo === "verdadero" ||
+           activo === "activo" || activo === "1";
 }
 
 function normalizarElementoNormal(elemento){
@@ -102,10 +115,10 @@ function normalizarElementoNormal(elemento){
 }
 
 function normalizarElementoGeometrico(elemento){
-    const tipo = normalizar(elemento.tipo || elemento.tipoElemento || "");
+    const tipoNormalizado = normalizar(elemento.tipo || elemento.tipoElemento || "");
     const esZona = elemento.tipoElemento === "ZONA_ESTACIONAMIENTO" ||
-        tipo === "estacionamiento tarifado" ||
-        tipo === "zona de estacionamiento tarifado";
+        tipoNormalizado === "estacionamiento tarifado" ||
+        tipoNormalizado === "zona de estacionamiento tarifado";
 
     return {
         id: elemento.id || "",
@@ -133,7 +146,6 @@ function fusionarElementosInformables(normales, geometricos){
         const codigo = String(elemento.codigo || "").trim().toUpperCase();
         const copia = Object.assign({}, elemento);
         resultado.push(copia);
-
         if(id) porClave.set("ID:" + id, copia);
         if(codigo) porClave.set("CODIGO:" + codigo, copia);
     });
@@ -141,18 +153,12 @@ function fusionarElementosInformables(normales, geometricos){
     geometricos.forEach(function(geometria){
         const id = String(geometria.id || "").trim();
         const codigo = String(geometria.codigo || "").trim().toUpperCase();
-        const existente =
-            (id && porClave.get("ID:" + id)) ||
-            (codigo && porClave.get("CODIGO:" + codigo));
+        const existente = (id && porClave.get("ID:" + id)) || (codigo && porClave.get("CODIGO:" + codigo));
 
-        // NO agregar geometrías huérfanas.
-        // Si un registro existe solamente en una hoja histórica de
-        // geometrías, queda fuera del informe.
+        // Una geometría sin correspondencia en Elementos NO es un elemento actual.
         if(!existente) return;
 
-        // La geometría únicamente completa al elemento ACTUAL.
         if(geometria.coordenadas) existente.coordenadas = geometria.coordenadas;
-
         ["localidad", "ciudad", "zona", "descripcion", "direccion", "caracteristicas", "estado"].forEach(function(campo){
             if(!existente[campo] && geometria[campo]) existente[campo] = geometria[campo];
         });
@@ -165,7 +171,6 @@ function cargarFiltros(){
     const tipoActual = document.getElementById("filtroTipo").value;
     const estadoActual = document.getElementById("filtroEstado").value;
     const localidadActual = document.getElementById("filtroLocalidad").value;
-
     cargarOpciones("filtroTipo", "Todos los tipos", elementos.map(e => e.tipo), tipoActual);
     cargarOpciones("filtroEstado", "Todos los estados", elementos.map(e => e.estado), estadoActual);
     cargarOpciones("filtroLocalidad", "Todas las localidades", elementos.map(e => e.localidad), localidadActual);
@@ -176,11 +181,9 @@ function cargarOpciones(id, etiquetaInicial, valores, valorSeleccionado){
     if(!select) return;
     select.innerHTML = "";
     select.add(new Option(etiquetaInicial, ""));
-
     [...new Set(valores.map(v => String(v || "").trim()).filter(Boolean))]
         .sort((a,b) => a.localeCompare(b, "es", {sensitivity:"base"}))
         .forEach(valor => select.add(new Option(valor, valor)));
-
     if([...select.options].some(opcion => opcion.value === valorSeleccionado)) select.value = valorSeleccionado;
 }
 
@@ -188,31 +191,20 @@ function renderizar(){
     const tabla = document.getElementById("tablaElementos");
     if(!tabla) return;
     tabla.innerHTML = "";
-
     const texto = normalizar(document.getElementById("buscar").value);
     const tipo = document.getElementById("filtroTipo").value;
     const estado = document.getElementById("filtroEstado").value;
     const localidad = document.getElementById("filtroLocalidad").value;
 
     elementosFiltrados = elementos.filter(function(elemento){
-        // Protección adicional: jamás mostrar un registro inactivo.
         if(!esElementoActual(elemento)) return false;
         if(tipo && normalizar(elemento.tipo) !== normalizar(tipo)) return false;
         if(estado && normalizar(elemento.estado) !== normalizar(estado)) return false;
         if(localidad && normalizar(elemento.localidad) !== normalizar(localidad)) return false;
-
         return normalizar([
-            elemento.codigo,
-            elemento.localidad,
-            elemento.ciudad,
-            elemento.zona,
-            elemento.tipo,
-            elemento.nombre,
-            elemento.descripcion,
-            elemento.direccion,
-            elemento.estado,
-            elemento.caracteristicas,
-            elemento.coordenadas
+            elemento.codigo, elemento.localidad, elemento.ciudad, elemento.zona,
+            elemento.tipo, elemento.nombre, elemento.descripcion, elemento.direccion,
+            elemento.estado, elemento.caracteristicas, elemento.coordenadas
         ].join(" ")).includes(texto);
     });
 
@@ -231,7 +223,6 @@ function renderizar(){
         `;
         tabla.appendChild(fila);
     });
-
     mensaje(elementosFiltrados.length + " elementos actuales encontrados.", "exito");
 }
 
@@ -240,34 +231,23 @@ function generarPDF(){
     const doc = new jsPDF({orientation:"landscape"});
     const localidad = document.getElementById("filtroLocalidad").value || "Todas";
     const tipo = document.getElementById("filtroTipo").value || "Todos";
-
     doc.setFontSize(18);
     doc.text("SGT - Informe de elementos", 14, 20);
     doc.setFontSize(10);
     doc.text("Localidad: " + localidad, 14, 30);
     doc.text("Tipo: " + tipo, 14, 37);
     doc.text("Fecha: " + new Date().toLocaleDateString(), 14, 44);
-
     doc.autoTable({
         startY:52,
         head:[["Código","Localidad","Tipo","Nombre","Descripción","Dirección","Características","Estado","Coordenadas"]],
         body:elementosFiltrados.map(function(elemento){
-            return [
-                elemento.codigo,
-                elemento.localidad || "Sin localidad",
-                elemento.tipo,
-                elemento.nombre,
-                elemento.descripcion || "-",
-                elemento.direccion || "-",
-                elemento.caracteristicas || "-",
-                elemento.estado,
-                elemento.coordenadas || "-"
-            ];
+            return [elemento.codigo, elemento.localidad || "Sin localidad", elemento.tipo,
+                elemento.nombre, elemento.descripcion || "-", elemento.direccion || "-",
+                elemento.caracteristicas || "-", elemento.estado, elemento.coordenadas || "-"];
         }),
         styles:{fontSize:6},
         headStyles:{fontSize:6}
     });
-
     doc.save("Informe_SGT_" + localidad + ".pdf");
 }
 
@@ -294,11 +274,8 @@ function normalizar(texto){
 
 function esc(valor){
     return String(valor || "")
-        .replace(/&/g,"&amp;")
-        .replace(/</g,"&lt;")
-        .replace(/>/g,"&gt;")
-        .replace(/"/g,"&quot;")
-        .replace(/'/g,"&#039;");
+        .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 }
 
 function mensaje(texto, clase){
