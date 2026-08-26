@@ -27,12 +27,25 @@ function obtenerZonasEstacionamiento() {
     const lista = datos
       .filter(function(f){ return String(f[0] || '').trim() !== ''; })
       .map(function(f) {
+        let localidad = String(f[9] || '').trim();
+
+        // Compatibilidad con registros antiguos que fueron guardados
+        // sin localidad: calcularla siempre a partir de sus coordenadas.
+        if (!localidad || localidad.toLowerCase() === 'sin localidad') {
+          try {
+            const puntos = JSON.parse(String(f[10] || '[]'));
+            if (Array.isArray(puntos) && puntos.length) {
+              localidad = determinarLocalidadCordon_(puntos);
+            }
+          } catch (_) {}
+        }
+
         return {
           id:f[0], codigo:f[1], tipo:f[2], serie:f[3], nombre:f[4],
           descripcion:f[5], direccion:f[6], estado:f[7],
-          caracteristicas:f[8], localidad:f[9], coordenadas:f[10],
-          fechaAlta:f[11], usuarioAlta:f[12], fechaModificacion:f[13],
-          usuarioModificacion:f[14], activo:f[15]
+          caracteristicas:f[8], localidad:localidad, localidadNombre:localidad,
+          coordenadas:f[10], fechaAlta:f[11], usuarioAlta:f[12],
+          fechaModificacion:f[13], usuarioModificacion:f[14], activo:f[15]
         };
       });
 
@@ -87,7 +100,7 @@ function guardarZonaEstacionamiento(e) {
     const codigo = prefijo + '-' + ('000000' + serie).slice(-6);
     const usuario = String(p.usuario || p.usuarioAlta || 'admin').trim() || 'admin';
 
-    // No confiar en localidad enviada por el cliente: determinarla por GPS.
+    // La localidad se determina en servidor a partir de las coordenadas.
     const localidad = determinarLocalidadCordon_(coordenadas);
 
     sh.appendRow([
