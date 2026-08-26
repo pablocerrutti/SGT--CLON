@@ -5,9 +5,8 @@
  * Estado, Características, Localidad, Coordenadas, Fecha alta,
  * Usuario alta, Fecha modificación, Usuario modificación, Activo.
  *
- * La localidad NO depende de lo que envíe el navegador:
- * se determina en servidor a partir de las coordenadas y
- * de la hoja Localidades.
+ * La localidad se determina automáticamente desde las coordenadas
+ * usando la hoja Localidades.
  ********************************************************/
 
 function hojaCordonesRojos_() {
@@ -30,6 +29,19 @@ function obtenerCordonesRojos() {
     const lista = datos
       .filter(function(f){ return String(f[0] || '').trim() !== ''; })
       .map(function(f) {
+        let localidad = String(f[9] || '').trim();
+
+        // Compatibilidad con registros antiguos sin localidad.
+        // La localidad se recupera desde las coordenadas guardadas.
+        if (!localidad || localidad.toLowerCase() === 'sin localidad') {
+          try {
+            const puntos = JSON.parse(String(f[10] || '[]'));
+            if (Array.isArray(puntos) && puntos.length) {
+              localidad = determinarLocalidadCordon_(puntos);
+            }
+          } catch (_) {}
+        }
+
         return {
           id:f[0],
           codigo:f[1],
@@ -40,7 +52,8 @@ function obtenerCordonesRojos() {
           direccion:f[6],
           estado:f[7],
           caracteristicas:f[8],
-          localidad:f[9],
+          localidad:localidad,
+          localidadNombre:localidad,
           coordenadas:f[10],
           fechaAlta:f[11],
           usuarioAlta:f[12],
@@ -50,7 +63,6 @@ function obtenerCordonesRojos() {
         };
       });
 
-    // Solo elementos vigentes.
     return {
       ok:true,
       datos:lista.filter(function(c) {
@@ -87,8 +99,6 @@ function guardarCordonRojo(e) {
     const codigo = prefijo + '-' + ('000000' + serie).slice(-6);
     const usuario = String(p.usuario || p.usuarioAlta || 'admin').trim() || 'admin';
 
-    // Determinación territorial: se prueban extremos y punto medio.
-    // La búsqueda se hace contra la hoja Localidades, usando centro + radio.
     const localidad = determinarLocalidadCordon_(puntos);
 
     sh.appendRow([
@@ -133,12 +143,9 @@ function determinarLocalidadCordon_(puntos) {
   if (!Array.isArray(puntos) || !puntos.length) return 'Sin localidad';
 
   const candidatos = [];
-
-  // Extremos.
   candidatos.push(puntos[0]);
   if (puntos.length > 1) candidatos.push(puntos[puntos.length - 1]);
 
-  // Punto medio aproximado del trazado.
   const medio = puntos[Math.floor(puntos.length / 2)];
   if (medio) candidatos.push(medio);
 
@@ -153,7 +160,6 @@ function determinarLocalidadCordon_(puntos) {
 
   if (!encontrados.length) return 'Sin localidad';
 
-  // Si dos puntos coinciden en una localidad, esa es la opción más fiable.
   const conteo = {};
   encontrados.forEach(function(item) {
     const clave = normalizarTextoCordon_(item.nombre);
@@ -216,7 +222,6 @@ function eliminarCordonRojo(e) {
     const fila = buscarFila(sh, id);
     if (fila === -1) return {ok:false,mensaje:'Cordón rojo no encontrado.'};
 
-    // Eliminación física para que no vuelva a aparecer en informes/mapas.
     sh.deleteRow(fila);
     return {ok:true,mensaje:'Cordón rojo eliminado.'};
   } catch (error) {
