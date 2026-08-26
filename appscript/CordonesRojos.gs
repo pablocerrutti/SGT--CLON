@@ -1,8 +1,13 @@
 /********************************************************
  * SGT - CORDONES ROJOS
- * Hoja: ID, Código, Tipo, Serie, Nombre, Descripción, Dirección,
+ * Hoja:
+ * ID, Código, Tipo, Serie, Nombre, Descripción, Dirección,
  * Estado, Características, Localidad, Coordenadas, Fecha alta,
  * Usuario alta, Fecha modificación, Usuario modificación, Activo.
+ *
+ * La localidad NO depende de lo que envíe el navegador:
+ * se determina en servidor a partir de las coordenadas y
+ * de la hoja Localidades.
  ********************************************************/
 
 function hojaCordonesRojos_() {
@@ -19,19 +24,58 @@ function obtenerCordonesRojos() {
     const sh = hojaCordonesRojos_();
     const ultimaFila = sh.getLastRow();
     if (ultimaFila < 2) return {ok:true, datos:[]};
+
     const datos = sh.getRange(2, 1, ultimaFila - 1, 16).getDisplayValues();
-    const lista = datos.filter(function(f){ return String(f[0] || '').trim() !== ''; }).map(function(f) {
-      return {id:f[0],codigo:f[1],tipo:f[2],serie:f[3],nombre:f[4],descripcion:f[5],direccion:f[6],estado:f[7],caracteristicas:f[8],localidad:f[9],coordenadas:f[10],fechaAlta:f[11],usuarioAlta:f[12],fechaModificacion:f[13],usuarioModificacion:f[14],activo:f[15]};
-    });
-    return {ok:true, datos:lista};
-  } catch (error) { return {ok:false, mensaje:'No fue posible obtener los cordones rojos: ' + error.message}; }
+
+    const lista = datos
+      .filter(function(f){ return String(f[0] || '').trim() !== ''; })
+      .map(function(f) {
+        return {
+          id:f[0],
+          codigo:f[1],
+          tipo:f[2],
+          serie:f[3],
+          nombre:f[4],
+          descripcion:f[5],
+          direccion:f[6],
+          estado:f[7],
+          caracteristicas:f[8],
+          localidad:f[9],
+          coordenadas:f[10],
+          fechaAlta:f[11],
+          usuarioAlta:f[12],
+          fechaModificacion:f[13],
+          usuarioModificacion:f[14],
+          activo:f[15]
+        };
+      });
+
+    // Solo elementos vigentes.
+    return {
+      ok:true,
+      datos:lista.filter(function(c) {
+        return normalizarActivoCordon_(c.activo) === 'SI';
+      })
+    };
+
+  } catch (error) {
+    return {ok:false, mensaje:'No fue posible obtener los cordones rojos: ' + error.message};
+  }
 }
 
 function guardarCordonRojo(e) {
   const p = (e && e.parameter) || {};
   const tipo = 'Cordón Rojo';
   const coordenadas = String(p.coordenadas || '').trim();
-  if (!coordenadas) return {ok:false, mensaje:'Seleccione puntos en el mapa para definir el cordón.'};
+
+  if (!coordenadas) {
+    return {ok:false, mensaje:'Seleccione puntos en el mapa para definir el cordón.'};
+  }
+
+  const puntos = leerPuntosCordon_(coordenadas);
+  if (puntos.length < 2) {
+    return {ok:false, mensaje:'El cordón rojo debe contener al menos 2 puntos válidos.'};
+  }
 
   const bloqueo = LockService.getScriptLock();
   try {
@@ -41,12 +85,11 @@ function guardarCordonRojo(e) {
     const serie = obtenerSiguienteSerieEnHoja_(sh, tipo);
     const prefijo = obtenerPrefijoCordon_();
     const codigo = prefijo + '-' + ('000000' + serie).slice(-6);
-    const usuario = String(p.usuario || 'admin').trim() || 'admin';
+    const usuario = String(p.usuario || p.usuarioAlta || 'admin').trim() || 'admin';
 
-    // La localidad se determina por la posición geográfica del cordón.
-    // Se intenta con ambos extremos y se prioriza una localidad coincidente.
-    const localidadPorCoordenadas = determinarLocalidadPorCoordenadas_(coordenadas);
-    const localidad = localidadPorCoordenadas || String(p.localidad || '').trim();
+    // Determinación territorial: se prueban extremos y punto medio.
+    // La búsqueda se hace contra la hoja Localidades, usando centro + radio.
+    const localidad = determinarLocalidadCordon_(puntos);
 
     sh.appendRow([
       generarID('CR'),
@@ -59,7 +102,7 @@ function guardarCordonRojo(e) {
       String(p.estado || 'Activo').trim(),
       String(p.caracteristicas || '').trim(),
       localidad,
-      coordenadas,
+      JSON.stringify(puntos),
       ahora(),
       usuario,
       '',
@@ -74,102 +117,111 @@ function guardarCordonRojo(e) {
       serie:serie,
       localidad:localidad
     };
+
   } catch (error) {
     return {ok:false,mensaje:'No fue posible guardar el cordón rojo: ' + error.message};
-  }
-  finally {
+  } finally {
     if (bloqueo.hasLock()) bloqueo.releaseLock();
   }
 }
 
 //==================================================
-// DETERMINAR LOCALIDAD DESDE COORDENADAS
+// LOCALIDAD DESDE COORDENADAS
 //==================================================
 
-function determinarLocalidadPorCoordenadas_(coordenadas) {
-  const puntos = leerPuntosCordon_(coordenadas);
-  if (!puntos.length) return '';
+function determinarLocalidadCordon_(puntos) {
+  if (!Array.isArray(puntos) || !puntos.length) return 'Sin localidad';
 
-  const localidades = [];
+  const candidatos = [];
 
-  puntos.forEach(function(punto) {
-    const localidad = geocodificarLocalidad_(punto[0], punto[1]);
-    if (localidad) localidades.push(localidad);
+  // Extremos.
+  candidatos.push(puntos[0]);
+  if (puntos.length > 1) candidatos.push(puntos[puntos.length - 1]);
+
+  // Punto medio aproximado del trazado.
+  const medio = puntos[Math.floor(puntos.length / 2)];
+  if (medio) candidatos.push(medio);
+
+  const encontrados = [];
+
+  candidatos.forEach(function(punto) {
+    const resultado = obtenerLocalidadPorCoordenadas(punto[0], punto[1]);
+    if (resultado && resultado.nombre && resultado.nombre !== 'Sin localidad') {
+      encontrados.push(resultado);
+    }
   });
 
-  if (!localidades.length) return '';
+  if (!encontrados.length) return 'Sin localidad';
 
-  // Si ambos extremos pertenecen a la misma localidad, es la opción inequívoca.
-  const primera = normalizarTextoCordon_(localidades[0]);
-  for (let i = 1; i < localidades.length; i++) {
-    if (normalizarTextoCordon_(localidades[i]) === primera) {
-      return localidades[i];
+  // Si dos puntos coinciden en una localidad, esa es la opción más fiable.
+  const conteo = {};
+  encontrados.forEach(function(item) {
+    const clave = normalizarTextoCordon_(item.nombre);
+    conteo[clave] = (conteo[clave] || 0) + 1;
+  });
+
+  let mejor = encontrados[0];
+  let mayor = 0;
+
+  encontrados.forEach(function(item) {
+    const cantidad = conteo[normalizarTextoCordon_(item.nombre)] || 0;
+    if (cantidad > mayor) {
+      mayor = cantidad;
+      mejor = item;
     }
-  }
+  });
 
-  // Si el cordón está justo en el límite, se toma la localidad del primer punto.
-  return localidades[0];
+  return mejor.nombre;
 }
 
 function leerPuntosCordon_(valor) {
   let puntos = valor;
   if (typeof puntos === 'string') {
-    try { puntos = JSON.parse(puntos); } catch (_) { return []; }
+    try { puntos = JSON.parse(puntos); }
+    catch (_) { return []; }
   }
   if (!Array.isArray(puntos)) return [];
 
-  return puntos.filter(function(p) {
-    if (!Array.isArray(p) || p.length < 2) return false;
+  const resultado = [];
+  puntos.forEach(function(p) {
+    if (!Array.isArray(p) || p.length < 2) return;
     const lat = Number(String(p[0]).replace(',', '.'));
     const lng = Number(String(p[1]).replace(',', '.'));
-    return Number.isFinite(lat) && lat >= -90 && lat <= 90 && Number.isFinite(lng) && lng >= -180 && lng <= 180;
-  }).slice(0, 2);
-}
-
-function geocodificarLocalidad_(lat, lng) {
-  try {
-    const respuesta = Maps.newGeocoder().setLanguage('es').reverseGeocode(lat, lng);
-    const resultados = respuesta && respuesta.results ? respuesta.results : [];
-
-    for (let i = 0; i < resultados.length; i++) {
-      const componentes = resultados[i].address_components || [];
-      let localidad = '';
-      let pueblo = '';
-
-      componentes.forEach(function(componente) {
-        const tipos = componente.types || [];
-        if (tipos.indexOf('locality') !== -1) localidad = componente.long_name;
-        if (!pueblo && tipos.indexOf('postal_town') !== -1) pueblo = componente.long_name;
-        if (!pueblo && tipos.indexOf('sublocality') !== -1) pueblo = componente.long_name;
-      });
-
-      if (localidad) return localidad.trim();
-      if (pueblo) return pueblo.trim();
+    if (Number.isFinite(lat) && lat >= -90 && lat <= 90 && Number.isFinite(lng) && lng >= -180 && lng <= 180) {
+      resultado.push([lat, lng]);
     }
-  } catch (error) {
-    console.warn('No se pudo determinar localidad por coordenadas:', error);
-  }
-  return '';
+  });
+  return resultado;
 }
 
 function normalizarTextoCordon_(valor) {
   return String(valor || '')
     .normalize('NFD')
-    .replace(/[\\u0300-\\u036f]/g, '')
+    .replace(/[\u0300-\u036f]/g, '')
     .trim()
     .toLowerCase();
+}
+
+function normalizarActivoCordon_(valor) {
+  const t = String(valor == null ? '' : valor).trim().toUpperCase();
+  return ['SI','SÍ','YES','TRUE','VERDADERO','ACTIVO','1'].indexOf(t) !== -1 ? 'SI' : 'NO';
 }
 
 function eliminarCordonRojo(e) {
   const id = String(((e && e.parameter) || {}).id || '').trim();
   if (!id) return {ok:false,mensaje:'Falta el identificador del cordón.'};
+
   try {
     const sh = hojaCordonesRojos_();
     const fila = buscarFila(sh, id);
     if (fila === -1) return {ok:false,mensaje:'Cordón rojo no encontrado.'};
+
+    // Eliminación física para que no vuelva a aparecer en informes/mapas.
     sh.deleteRow(fila);
     return {ok:true,mensaje:'Cordón rojo eliminado.'};
-  } catch (error) { return {ok:false,mensaje:'No fue posible eliminar el cordón rojo: ' + error.message}; }
+  } catch (error) {
+    return {ok:false,mensaje:'No fue posible eliminar el cordón rojo: ' + error.message};
+  }
 }
 
 function obtenerPrefijoCordon_() { return 'CR'; }
