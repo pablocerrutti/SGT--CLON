@@ -1,130 +1,56 @@
-//==================================================
 // SGT - INTEGRIDAD DE ELEMENTOS
-// Verificación cliente antes de mostrar mapas/informes.
-//==================================================
+// Valida geometrías especiales ANTES de renderizar mapa/informes.
 (function(){
-    'use strict';
-
-    function clave(valor){
-        return String(valor || '').trim().toUpperCase();
-    }
-
-    function tipoNormalizado(valor){
-        return String(valor || '')
-            .trim()
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g,'')
-            .toUpperCase();
-    }
-
-    function esEspecial(e){
-        const t = tipoNormalizado(e && e.tipo);
-        return t === 'CORDON ROJO' || t === 'ESTACIONAMIENTO TARIFADO';
-    }
-
-    async function obtenerClavesActuales(){
-        const resultado = { cordones:new Set(), zonas:new Set() };
-
-        try {
-            if(typeof window.apiObtenerCordonesRojos === 'function'){
-                const r = await window.apiObtenerCordonesRojos();
-                if(r && r.ok && Array.isArray(r.datos)){
-                    r.datos.forEach(function(x){
-                        const id = clave(x.id), codigo = clave(x.codigo);
-                        if(id) resultado.cordones.add('ID:'+id);
-                        if(codigo) resultado.cordones.add('CODIGO:'+codigo);
-                    });
-                }
-            }
-        } catch(e){
-            console.warn('Integridad: no se pudieron comprobar cordones.', e);
-        }
-
-        try {
-            if(typeof window.apiObtenerZonasEstacionamiento === 'function'){
-                const r = await window.apiObtenerZonasEstacionamiento();
-                if(r && r.ok && Array.isArray(r.datos)){
-                    r.datos.forEach(function(x){
-                        const id = clave(x.id), codigo = clave(x.codigo);
-                        if(id) resultado.zonas.add('ID:'+id);
-                        if(codigo) resultado.zonas.add('CODIGO:'+codigo);
-                    });
-                }
-            }
-        } catch(e){
-            console.warn('Integridad: no se pudieron comprobar zonas.', e);
-        }
-
-        return resultado;
-    }
-
-    function existeGeometria(e, claves){
-        if(!esEspecial(e)) return true;
-
-        const id = clave(e.id);
-        const codigo = clave(e.codigo);
-        const t = tipoNormalizado(e.tipo);
-        const conjunto = t === 'CORDON ROJO' ? claves.cordones : claves.zonas;
-
-        return (id && conjunto.has('ID:'+id)) ||
-               (codigo && conjunto.has('CODIGO:'+codigo));
-    }
-
-    async function filtrar(datos){
-        if(!Array.isArray(datos) || !datos.length) return [];
-
-        const claves = await obtenerClavesActuales();
-
-        return datos.filter(function(e){
-            // Los elementos normales no dependen de geometrías especiales.
-            // Los CR/ET sí: si fueron eliminados de su hoja, desaparecen.
-            return existeGeometria(e, claves);
-        });
-    }
-
-    // Esperar a que api.js haya creado sus funciones.
-    function instalar(){
-        if(typeof window.apiObtenerElementos !== 'function'){
-            setTimeout(instalar, 50);
-            return;
-        }
-
-        if(window.__sgtIntegridadInstalada) return;
-        window.__sgtIntegridadInstalada = true;
-
-        const originalElementos = window.apiObtenerElementos;
-        window.apiObtenerElementos = async function(){
-            const respuesta = await originalElementos.apply(this, arguments);
-            if(!respuesta || !respuesta.ok) return respuesta;
-
-            const datosOriginales = Array.isArray(respuesta.datos) ? respuesta.datos : [];
-            const datosActuales = await filtrar(datosOriginales);
-
-            return Object.assign({}, respuesta, {
-                datos: datosActuales,
-                totalActuales: datosActuales.length
-            });
-        };
-
-        // También protegemos el catálogo usado por Informes.
-        if(typeof window.apiObtenerCatalogoElementosInformables === 'function'){
-            const originalCatalogo = window.apiObtenerCatalogoElementosInformables;
-            window.apiObtenerCatalogoElementosInformables = async function(){
-                const respuesta = await originalCatalogo.apply(this, arguments);
-                if(!respuesta || !respuesta.ok) return respuesta;
-
-                const datosOriginales = Array.isArray(respuesta.datos) ? respuesta.datos : [];
-                const datosActuales = await filtrar(datosOriginales);
-
-                return Object.assign({}, respuesta, {
-                    datos: datosActuales,
-                    totalActuales: datosActuales.length
-                });
-            };
-        }
-
-        console.log('SGT: verificación de integridad de elementos instalada.');
-    }
-
-    instalar();
+'use strict';
+function clave(v){return String(v||'').trim().toUpperCase();}
+function tipo(v){return String(v||'').trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();}
+function especial(e){let t=tipo(e&&e.tipo);return t==='CORDON ROJO'||t==='ESTACIONAMIENTO TARIFADO';}
+async function actuales(){
+ let r={cordones:new Set(),zonas:new Set(),cordonesOK:false,zonasOK:false};
+ try{if(typeof window.apiObtenerCordonesRojos==='function'){let x=await window.apiObtenerCordonesRojos();if(x&&x.ok&&Array.isArray(x.datos)){r.cordonesOK=true;x.datos.forEach(e=>{let i=clave(e.id),c=clave(e.codigo);if(i)r.cordones.add('ID:'+i);if(c)r.cordones.add('CODIGO:'+c);});}}}catch(e){console.warn('Integridad cordones:',e);}
+ try{if(typeof window.apiObtenerZonasEstacionamiento==='function'){let x=await window.apiObtenerZonasEstacionamiento();if(x&&x.ok&&Array.isArray(x.datos)){r.zonasOK=true;x.datos.forEach(e=>{let i=clave(e.id),c=clave(e.codigo);if(i)r.zonas.add('ID:'+i);if(c)r.zonas.add('CODIGO:'+c);});}}}catch(e){console.warn('Integridad estacionamiento:',e);}
+ return r;
+}
+async function filtrar(lista){
+ if(!Array.isArray(lista)||!lista.length)return lista||[];
+ let r=await actuales();
+ return lista.filter(function(e){
+  if(!especial(e))return true;
+  let t=tipo(e.tipo), id=clave(e.id), c=clave(e.codigo);
+  if(t==='CORDON ROJO'){
+   if(!r.cordonesOK)return true;
+   return !!((id&&r.cordones.has('ID:'+id))||(c&&r.cordones.has('CODIGO:'+c)));
+  }
+  if(!r.zonasOK)return true;
+  return !!((id&&r.zonas.has('ID:'+id))||(c&&r.zonas.has('CODIGO:'+c)));
+ });
+}
+window.SGTFiltrarElementosActuales=filtrar;
+function instalarMapa(){
+ if(typeof window.renderizarMapaCompleto!=='function')return false;
+ if(window.__sgtMapaIntegridad)return true;
+ let original=window.renderizarMapaCompleto;
+ window.renderizarMapaCompleto=async function(){
+  try{if(typeof elementos!=='undefined')elementos=await filtrar(elementos);}catch(e){console.warn('Integridad mapa:',e);}
+  return original.apply(this,arguments);
+ };
+ window.__sgtMapaIntegridad=true;
+ return true;
+}
+function instalarInformes(){
+ if(typeof window.renderizar!=='function')return false;
+ if(window.__sgtInformesIntegridad)return true;
+ let original=window.renderizar;
+ window.renderizar=async function(){
+  try{if(typeof elementos!=='undefined')elementos=await filtrar(elementos);}catch(e){console.warn('Integridad informes:',e);}
+  return original.apply(this,arguments);
+ };
+ window.__sgtInformesIntegridad=true;
+ return true;
+}
+function instalar(){
+ let m=instalarMapa(), i=instalarInformes();
+ if(!m&&!i)setTimeout(instalar,50);
+}
+instalar();
 })();
