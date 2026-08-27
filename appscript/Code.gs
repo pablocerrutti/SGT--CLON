@@ -1,4 +1,4 @@
-﻿/********************************************************
+/********************************************************
  SGT
  Sistema de Gestión de Tránsito
  API PRINCIPAL
@@ -45,14 +45,16 @@ function doPost(e) { return doGet(e); }
 //======================================================
 // CATÁLOGO ACTUAL PARA INFORMES
 //======================================================
-// IMPORTANTE:
-// - Los ELEMENTOS normales se consideran actuales mientras
-//   sigan existiendo físicamente en la hoja Elementos.
-// - Esto permite conservar registros creados con versiones
-//   anteriores del sistema que tenían Activo vacío o no tenían
-//   todavía las columnas territoriales.
-// - Si un elemento normal tiene Activo = NO, se excluye.
-// - ZE y CR utilizan su eliminación lógica SI/NO.
+// Lee DIRECTAMENTE las tres fuentes vigentes:
+//   1. Elementos
+//   2. ZonasEstacionamiento
+//   3. Cordon Rojo
+//
+// Para Elementos normales NO exige Activo=SI, porque existen
+// registros históricos válidos con esa columna vacía. Solo se
+// excluye un registro cuando Activo está explícitamente en NO.
+// La existencia física del registro en la hoja es la referencia
+// de verdad para determinar que sigue existiendo.
 //======================================================
 
 function obtenerCatalogoElementosInformables() {
@@ -60,50 +62,41 @@ function obtenerCatalogoElementosInformables() {
     const datos = [];
 
     //==================================================
-    // 1) ELEMENTOS NORMALES
+    // 1) ELEMENTOS NORMALES - LECTURA DIRECTA DE HOJA
     //==================================================
-    const elementos = obtenerElementos();
+    const elementos = obtenerElementosDirectosParaInforme_();
+    elementos.forEach(function(elemento) {
+      if (!elemento || !String(elemento.id || "").trim()) return;
+      if (!esElementoNormalVigente_(elemento.activo)) return;
 
-    if (elementos && elementos.ok && Array.isArray(elementos.datos)) {
-      elementos.datos.forEach(function(elemento) {
-        if (!elemento || !String(elemento.id || "").trim()) return;
-
-        // Para Elementos normales, un registro existente en la hoja
-        // es válido aunque Activo esté vacío (compatibilidad histórica).
-        // Solo se excluye explícitamente cuando figura como NO/inactivo.
-        if (!esElementoNormalVigente_(elemento.activo)) return;
-
-        const lat = String(elemento.latitud == null ? "" : elemento.latitud).trim();
-        const lng = String(elemento.longitud == null ? "" : elemento.longitud).trim();
-
-        datos.push({
-          tipoElemento: "ELEMENTO",
-          id: String(elemento.id || "").trim(),
-          codigo: String(elemento.codigo || "").trim(),
-          tipo: String(elemento.tipo || "").trim(),
-          serie: String(elemento.serie || "").trim(),
-          nombre: String(elemento.nombre || "").trim(),
-          descripcion: String(elemento.descripcion || "").trim(),
-          direccion: String(elemento.direccion || "").trim(),
-          estado: String(elemento.estado || "").trim(),
-          caracteristicas: String(elemento.caracteristicas || "").trim(),
-          ciudad: String(elemento.ciudad || "").trim(),
-          localidad: String(elemento.localidad || elemento.localidadNombre || elemento.ciudad || "").trim(),
-          zona: String(elemento.zona || "").trim(),
-          coordenadas: (lat !== "" && lng !== "") ? lat + ", " + lng : "",
-          geometria: "PUNTO",
-          fechaAlta: String(elemento.fechaAlta || "").trim(),
-          usuarioAlta: String(elemento.usuarioAlta || "").trim(),
-          activo: "SI"
-        });
+      datos.push({
+        tipoElemento: "ELEMENTO",
+        id: String(elemento.id || "").trim(),
+        codigo: String(elemento.codigo || "").trim(),
+        tipo: String(elemento.tipo || "").trim(),
+        serie: String(elemento.serie || "").trim(),
+        nombre: String(elemento.nombre || "").trim(),
+        descripcion: String(elemento.descripcion || "").trim(),
+        direccion: String(elemento.direccion || "").trim(),
+        estado: String(elemento.estado || "").trim(),
+        caracteristicas: String(elemento.caracteristicas || "").trim(),
+        ciudad: String(elemento.ciudad || "").trim(),
+        localidad: String(elemento.localidad || elemento.localidadNombre || elemento.ciudad || "").trim(),
+        zona: String(elemento.zona || "").trim(),
+        latitud: String(elemento.latitud || "").trim(),
+        longitud: String(elemento.longitud || "").trim(),
+        coordenadas: construirCoordenadasPunto_(elemento.latitud, elemento.longitud),
+        geometria: "PUNTO",
+        fechaAlta: String(elemento.fechaAlta || "").trim(),
+        usuarioAlta: String(elemento.usuarioAlta || "").trim(),
+        activo: "SI"
       });
-    }
+    });
 
     //==================================================
     // 2) ESTACIONAMIENTO TARIFADO
     //==================================================
     const zonas = obtenerZonasEstacionamiento({parameter:{incluirInactivos:"NO"}});
-
     if (zonas && zonas.ok && Array.isArray(zonas.datos)) {
       zonas.datos.forEach(function(zona) {
         if (!zona || !String(zona.id || "").trim()) return;
@@ -136,7 +129,6 @@ function obtenerCatalogoElementosInformables() {
     // 3) CORDÓN ROJO
     //==================================================
     const cordones = obtenerCordonesRojos({parameter:{incluirInactivos:"NO"}});
-
     if (cordones && cordones.ok && Array.isArray(cordones.datos)) {
       cordones.datos.forEach(function(cordon) {
         if (!cordon || !String(cordon.id || "").trim()) return;
@@ -170,7 +162,6 @@ function obtenerCatalogoElementosInformables() {
     //==================================================
     const vistos = {};
     const resultado = [];
-
     datos.forEach(function(elemento) {
       const id = String(elemento.id || "").trim();
       if (!id) return;
@@ -180,7 +171,7 @@ function obtenerCatalogoElementosInformables() {
       resultado.push(elemento);
     });
 
-    console.log("Catálogo informable ACTUAL + LEGACY:", resultado.length);
+    console.log("Catálogo informable - Elementos + ZE + CR:", resultado.length);
     return {ok:true,datos:resultado,cantidad:resultado.length};
 
   } catch (error) {
@@ -190,10 +181,87 @@ function obtenerCatalogoElementosInformables() {
 }
 
 
+//======================================================
+// LECTURA ROBUSTA DE HOJA ELEMENTOS
+//======================================================
+// No depende de que la hoja tenga exactamente 19 columnas ni de
+// que las columnas territoriales hayan existido desde el principio.
+// Busca los encabezados por nombre y conserva los registros viejos.
+//======================================================
+
+function obtenerElementosDirectosParaInforme_() {
+  const sh = hoja("Elementos");
+  const ultimaFila = sh.getLastRow();
+  const ultimaColumna = sh.getLastColumn();
+
+  if (ultimaFila < 2 || ultimaColumna < 1) return [];
+
+  const valores = sh.getRange(1, 1, ultimaFila, ultimaColumna).getDisplayValues();
+  const encabezados = valores[0].map(function(valor) {
+    return String(valor || "").trim();
+  });
+
+  const indice = {};
+  encabezados.forEach(function(encabezado, i) {
+    const clave = normalizarEncabezadoInforme_(encabezado);
+    if (clave && indice[clave] === undefined) indice[clave] = i;
+  });
+
+  function valorFila_(fila, nombres) {
+    for (let i = 0; i < nombres.length; i++) {
+      const idx = indice[normalizarEncabezadoInforme_(nombres[i])];
+      if (idx !== undefined) {
+        const valor = fila[idx];
+        if (String(valor == null ? "" : valor).trim() !== "") return valor;
+      }
+    }
+    return "";
+  }
+
+  return valores.slice(1).filter(function(fila) {
+    return String(valorFila_(fila, ["ID", "Id", "id"]) || "").trim() !== "";
+  }).map(function(fila) {
+    return {
+      id: valorFila_(fila, ["ID"]),
+      codigo: valorFila_(fila, ["Código", "Codigo"]),
+      tipo: valorFila_(fila, ["Tipo"]),
+      serie: valorFila_(fila, ["Serie"]),
+      nombre: valorFila_(fila, ["Nombre"]),
+      descripcion: valorFila_(fila, ["Descripción", "Descripcion"]),
+      latitud: valorFila_(fila, ["Latitud"]),
+      longitud: valorFila_(fila, ["Longitud"]),
+      direccion: valorFila_(fila, ["Dirección", "Direccion"]),
+      estado: valorFila_(fila, ["Estado"]),
+      caracteristicas: valorFila_(fila, ["Características", "Caracteristicas"]),
+      fechaAlta: valorFila_(fila, ["Fecha alta", "Fecha Alta"]),
+      usuarioAlta: valorFila_(fila, ["Usuario alta", "Usuario Alta"]),
+      activo: valorFila_(fila, ["Activo"]),
+      ciudad: valorFila_(fila, ["Ciudad"]),
+      localidad: valorFila_(fila, ["Localidad"]),
+      zona: valorFila_(fila, ["Zona"])
+    };
+  });
+}
+
+function normalizarEncabezadoInforme_(valor) {
+  return String(valor || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function construirCoordenadasPunto_(latitud, longitud) {
+  const lat = String(latitud == null ? "" : latitud).trim();
+  const lng = String(longitud == null ? "" : longitud).trim();
+  if (!lat || !lng) return "";
+  return lat + ", " + lng;
+}
+
+
 // Los elementos normales se eliminan físicamente mediante eliminarElemento().
-// Por eso un vacío en Activo no significa que estén eliminados: significa
-// compatibilidad con registros antiguos. Solo un valor explícitamente
-// negativo los excluye.
+// Por eso un vacío en Activo no significa que estén eliminados.
 function esElementoNormalVigente_(valor) {
   const texto = String(valor == null ? "" : valor).trim().toUpperCase();
   return ["NO","N","FALSE","FALSO","INACTIVO","0"].indexOf(texto) === -1;
